@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    <meta name="theme-color" content="#0066cc">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="/main/manifest.json">
+    <link rel="apple-touch-icon" href="/logo.png">
+    <title>Đăng nhập - CAWACO</title>
+    <link rel="stylesheet" href="/login/login.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <div class="logo">
+                <img src="/logo.png" alt="Logo" style="max-width: 120px; height: auto;">
+            </div>
+            <h1>CAWACO</h1>
+            <h2>Đăng nhập hệ thống</h2>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">Tên đăng nhập</label>
+                    <input type="text" id="username" name="username" required autocomplete="username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Mật khẩu</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password">
+                </div>
+                
+                <div id="error-message" class="error-message"></div>
+                
+                <button type="submit" class="login-btn">
+                    <span class="btn-text">Đăng nhập</span>
+                    <span class="spinner" style="display: none;">
+                        <svg class="spinner-svg" viewBox="0 0 50 50">
+                            <circle class="spinner-circle" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+                        </svg>
+                    </span>
+                </button>
+            </form>
+            
+            <div class="footer">
+                <p>&copy; 2026 CAWACO System</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="page-transition-overlay"></div>
+    <script src="/login/login.js"></script>
+</body>
+</html>

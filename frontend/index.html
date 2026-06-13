@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hệ Thống Quản Lý Trạm Quan Trắc - CAWACO</title>
+  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lykmapipo/themify-icons@0.1.2/css/themify-icons.css">
+  
+  <link rel="stylesheet" href="shared/layout.css">
+  <link rel="stylesheet" href="shared/gauge.css">
+  <link rel="stylesheet" href="shared/index.css">
+
+  <style>
+    /* ==========================================================================
+       ÉP BUỘC ĐỒNG BỘ BỐ CỤC 2 CỘT NGANG CỐ ĐỊNH CHỐNG TRÀN/RỚT DÒNG
+       ========================================================================== */
+    
+    /* Cấu trúc cha bọc trang Dashboard */
+    #page-dashboard.active-page {
+      display: flex !important;
+      flex-direction: column !important;
+      height: 100% !important;
+      width: 100% !important;
+      overflow: hidden !important;
+    }
+
+    /* Định dạng thanh ngang chứa Gauge dính dưới Header */
+    .gauge-section {
+      display: grid !important;
+      grid-template-columns: repeat(6, 1fr) !important;
+      gap: 5px !important;
+      padding: 5px 5px !important;
+      background: #0a1320 !important;
+      border-bottom: 1px solid #1e3a8a !important;
+      flex-shrink: 0 !important;
+      height: 250px !important;
+    }
+
+    /* Ép buộc vùng chứa chính phải phân tách làm 2 cột ngang (Trái 58% | Phải 42%) */
+    .db-main-content {
+      flex: 1 !important;
+      display: grid !important;
+      grid-template-columns: 58fr 42fr !important; /* Khóa cứng tỷ lệ trục ngang theo hình ảnh */
+      gap: 20px !important;
+      padding: 20px !important;
+      width: 100% !important;
+      height: 100% !important;
+      overflow: hidden !important; /* Khóa cứng khung không cho rớt dòng */
+    }
+
+    /* Khối chứa 2 biểu đồ bên trái */
+    .db-center {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 20px !important;
+      height: 100% !important;
+      width: 100% !important;
+    }
+
+    /* Khối chứa 1 bảng thống kê bên phải */
+    .db-right {
+      display: flex !important;
+      flex-direction: column !important;
+      height: 100% !important;
+      width: 100% !important;
+    }
+
+    /* Đảm bảo 2 panel bên cột trái tự chia đều chiều cao 50/50 */
+    .db-center .panel {
+      flex: 1 !important;
+    }
+
+    /* Đảm bảo panel bảng biểu cột phải kéo giãn trọn vẹn 100% chiều cao */
+    .db-right .panel {
+      flex: 1 !important;
+      height: 100% !important;
+    }
+
+    .flow-history-panel {
+      min-height: 0 !important;
+    }
+
+    .flow-chart-toolbar {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 12px !important;
+      margin-bottom: 10px !important;
+      flex-shrink: 0 !important;
+    }
+
+    .flow-chart-status {
+      color: #9fb6ff !important;
+      font: 12px/1.4 Arial, sans-serif !important;
+      white-space: nowrap !important;
+    }
+
+    .flow-chart-wrap {
+      position: relative !important;
+      flex: 1 !important;
+      min-height: 260px !important;
+      background: #0d1b3e !important;
+      border: 1px solid #2d4a9e !important;
+      border-radius: 6px !important;
+      padding: 12px !important;
+    }
+
+    .flow-chart-wrap canvas {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    .flow-chart-wrap .chart-placeholder-text {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="layout-container"></div>
+
+  <template id="pages-template">
+      
+      <div id="page-dashboard" class="page-content active-page">
+        
+        <div class="gauge-section">
+          <div class="gauge-item" id="Gauge_01"></div>
+          <div class="gauge-item" id="Gauge_02"></div>
+          <div class="gauge-item" id="Gauge_03"></div>
+          <div class="gauge-item" id="Gauge_04"></div>
+          <div class="gauge-item" id="Gauge_05"></div>
+          <div class="gauge-item" id="Gauge_06"></div>
+        </div>
+
+        <div class="db-main-content">
+          <div class="db-center">
+            <!-- <div class="panel">
+              <div class="panel-title">Gross Profit over time</div>
+              <div class="panel-sub">Nov. 2014 recorded the highest gross profit.</div>
+              <div class="flow-chart-wrap">
+                <span class="chart-placeholder-text"><i class="ti-chart-line"></i> Vùng biểu đồ đường</span>
+              </div>
+              <div class="chart-timeline"><span>2013 Q3</span><span class="timeline-end">2014 Q4</span></div>
+            </div> -->
+            <div class="panel flow-history-panel">
+              <div class="panel-title">Lịch sử lưu lượng theo nhóm</div>
+              <div class="panel-sub">Dữ liệu tổng flow của 6 gauge theo thời gian</div>
+              <div class="flow-chart-toolbar">
+                <div class="flow-chart-status" id="flowHistoryStatus">Đang tải...</div>
+              </div>
+              <div class="flow-chart-wrap">
+                <canvas id="flowHistoryChart"></canvas>
+                <span class="chart-placeholder-text"><i class="ti-bar-chart"></i> Vùng biểu đồ cột + đường</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="db-right">
+            <div class="panel">
+              <div class="panel-title">Actual Revenue by Country</div>
+              <div class="panel-country-header"><span>Country</span><span class="txt-orange">Revenue ↓</span><span>Variance</span></div>
+              <div class="country-row">
+                <span class="country-name">United States</span>
+                <div class="country-bar-wrap"><div class="country-bar bar-blue"></div></div>
+                <span class="country-var-pos">0.7%</span>
+              </div>
+              <div class="country-row">
+                <span class="country-name">Others</span>
+                <div class="country-bar-wrap"><div class="country-bar bar-orange-short"></div></div>
+                <span class="country-var-neg">-20.1%</span>
+              </div>
+              <div class="country-row">
+                <span class="country-name">Canada</span>
+                <div class="country-bar-wrap"><div class="country-bar bar-orange-shorter"></div></div>
+                <span class="country-var-neg">-6.5%</span>
+              </div>
+              <div class="country-row">
+                <span class="country-name">Great Britain</span>
+                <div class="country-bar-wrap"><div class="country-bar bar-blue-shortest"></div></div>
+                <span class="country-var-pos">43.5%</span>
+              </div>
+              <div class="country-total"><span>Total</span><span>$118,454,294</span><span class="txt-cyan-right">0.6%</span></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div id="page-bando" class="page-content fallback-page-style">
+        <h2><i class="ti-map-alt"></i> BẢN ĐỒ TRẠM QUAN TRẮC THỜI GIAN THỰC</h2>
+        <div class="dummy-component-view">Không gian hiển thị bản đồ GIS vệ tinh...</div>
+      </div>
+      <div id="page-thongke" class="page-content fallback-page-style">
+        <h2><i class="ti-stats-up"></i> BÁO CÁO THỐNG KÊ DỮ LIỆU BẢN TIN</h2>
+        <div class="dummy-component-view">Bảng biểu truy vấn dữ liệu quan trắc lịch sử...</div>
+      </div>
+      <div id="page-btnmt" class="page-content fallback-page-style">
+        <h2><i class="ti-cloud-up"></i> ĐỒNG BỘ DỮ LIỆU BỘ TÀI NGUYÊN MÔI TRƯỜNG</h2>
+        <div class="dummy-component-view">Trạng thái API truyền nhận cổng thông tin BTNMT...</div>
+      </div>
+      <div id="page-thatthoat" class="page-content fallback-page-style">
+        <h2><i class="ti-alert"></i> CẢNH BÁO THẤT THOÁT MẠNG LƯỚI CẤP NƯỚC / KHÍ</h2>
+        <div class="dummy-component-view">Biểu đồ giám sát áp lực và thuật toán phát hiện rò rỉ...</div>
+      </div>
+      <div id="page-caidat" class="page-content fallback-page-style">
+        <h2><i class="ti-settings"></i> CÀI ĐẶT CẤU HÌNH HỆ THỐNG</h2>
+        <div class="dummy-component-view">Cấu hình ngưỡng cảnh báo dữ liệu (Min/Max Threshold)...</div>
+      </div>
+      <div id="page-user" class="page-content fallback-page-style">
+        <h2><i class="ti-user"></i> PHÂN QUYỀN VÀ QUẢN LÝ NGƯỜI DÙNG</h2>
+        <div class="dummy-component-view">Danh sách tài khoản, nhật ký thao tác hệ thống (Audit Log)...</div>
+      </div>
+  </template>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+  <script src="shared/gauge.js"></script>
+
+  <script>
+    async function loadLayout() {
+      const container = document.getElementById('layout-container');
+      if (!container) return;
+
+      try {
+        const response = await fetch('shared/layout.html');
+        if (!response.ok) throw new Error(`Lỗi HTTP status: ${response.status}`);
+        
+        container.innerHTML = await response.text();
+
+        const pagesTemplate = document.getElementById('pages-template');
+        const dynamicContainer = document.getElementById('dynamic-pages-container');
+        
+        if (pagesTemplate && dynamicContainer) {
+          const clone = pagesTemplate.content.cloneNode(true);
+          dynamicContainer.appendChild(clone);
+        }
+
+        document.dispatchEvent(new CustomEvent('layout:ready'));
+      } catch (error) {
+        console.error('Không khởi tạo được bộ khung layout.html:', error);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadLayout);
+
+    document.addEventListener('layout:ready', function () {
+      const gauges = [];
+
+      gauges.push(new ScadaGauge("Gauge_01", { min: 0, max: 2000, title: "TỔNG CÔNG SUẤT", unit: "m³/h", color: "#8BC34A", decimals: 0, api: { url: "/api/sources/total-flow-all" } }));
+      gauges.push(new ScadaGauge("Gauge_02", { min: 0, max: 2000, title: "GP35-BTNMT", unit: "m³/h", color: "#8BC34A", decimals: 0, api: { url: "/api/sources/total-flow-gp35" } }));
+      gauges.push(new ScadaGauge("Gauge_03", { min: 0, max: 500, title: "GP36-BTNMT", unit: "m³/h", color: "#2196F3", decimals: 0, api: { url: "/api/sources/total-flow-gp36" } }));
+      gauges.push(new ScadaGauge("Gauge_04", { min: 0, max: 500, title: "GP391-BTNMT", unit: "m³/h", color: "#FF9800", decimals: 0, api: { url: "/api/sources/total-flow-gp391" } }));
+      gauges.push(new ScadaGauge("Gauge_05", { min: 0, max: 500, title: "GP393-BTNMT", unit: "m³/h", color: "#4CAF50", decimals: 0, api: { url: "/api/sources/total-flow-gp393" } }));
+      gauges.push(new ScadaGauge("Gauge_06", { min: 0, max: 500, title: "GP-STNMT", unit: "m³/h", color: "#00BCD4", decimals: 0, api: { url: "/api/sources/total-flow-gpstn" } }));
+
+      initFlowHistoryChart();
+
+      const tabs = document.querySelectorAll(".footer-tab");
+      tabs.forEach(tab => {
+        tab.addEventListener("click", function () {
+          const currentActiveTab = document.querySelector(".footer-tab.active");
+          if (currentActiveTab) currentActiveTab.classList.remove("active");
+          this.classList.add("active");
+
+          const targetPageId = this.getAttribute("data-target");
+          const currentPage = document.querySelector(".page-content.active-page");
+          if (currentPage) currentPage.classList.remove("active-page");
+
+          const targetPage = document.getElementById(targetPageId);
+          if (targetPage) targetPage.classList.add("active-page");
+        });
+      });
+    });
+
+    async function initFlowHistoryChart() {
+      const canvas = document.getElementById("flowHistoryChart");
+      const status = document.getElementById("flowHistoryStatus");
+
+      if (!canvas || !status) return;
+
+      if (!window.Chart) {
+        status.textContent = "Khong tai duoc Chart.js";
+        return;
+      }
+
+      const series = [
+        { key: "all", label: "Tong", color: "#F2D16B", width: 3 },
+        { key: "gp35", label: "GP35", color: "#8BC34A", width: 2 },
+        { key: "gp36", label: "GP36", color: "#2196F3", width: 2 },
+        { key: "gp391", label: "GP391", color: "#FF9800", width: 2 },
+        { key: "gp393", label: "GP393", color: "#4CAF50", width: 2 },
+        { key: "gpstn", label: "GP-STN", color: "#00BCD4", width: 2 }
+      ];
+
+      const chart = new Chart(canvas, {
+        type: "line",
+        data: {
+          labels: [],
+          datasets: series.map(item => ({
+            label: item.label,
+            data: [],
+            borderColor: item.color,
+            backgroundColor: item.color,
+            borderWidth: item.width,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            tension: 0.28
+          }))
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          interaction: {
+            mode: "index",
+            intersect: false
+          },
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: {
+                color: "#dbe7ff",
+                boxWidth: 12,
+                boxHeight: 12,
+                padding: 14
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: (context) => `${context.dataset.label}: ${Number(context.parsed.y || 0).toLocaleString("vi-VN")} m³/h`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: "rgba(159, 182, 255, 0.12)" },
+              ticks: {
+                color: "#9fb6ff",
+                maxRotation: 0,
+                autoSkip: true,
+                maxTicksLimit: 8
+              }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: "rgba(159, 182, 255, 0.12)" },
+              ticks: {
+                color: "#9fb6ff",
+                callback: (value) => Number(value).toLocaleString("vi-VN")
+              },
+              title: {
+                display: true,
+                text: "m³/h",
+                color: "#dbe7ff"
+              }
+            }
+          }
+        }
+      });
+
+      async function refreshHistory() {
+        try {
+          const response = await fetch("/api/sources/flow-history?limit=48", {
+            cache: "no-store"
+          });
+          const json = await response.json();
+
+          if (!json.success || !Array.isArray(json.rows)) {
+            throw new Error("Du lieu lich su khong hop le");
+          }
+
+          chart.data.labels = json.rows.map(row => {
+            const text = String(row.ts || "");
+            return text.length >= 16 ? text.slice(11, 16) : text;
+          });
+
+          series.forEach((item, index) => {
+            chart.data.datasets[index].data = json.rows.map(row => Number(row[item.key] || 0));
+          });
+
+          chart.update();
+          status.textContent = json.rows.length
+            ? `Cap nhat: ${json.rows[json.rows.length - 1].ts}`
+            : "Chua co du lieu";
+        } catch (error) {
+          console.error("Loi tai lich su flow:", error);
+          status.textContent = "Loi tai du lieu";
+        }
+      }
+
+      await refreshHistory();
+      setInterval(refreshHistory, 30000);
+    }
+  </script>
+</body>
+</html>
