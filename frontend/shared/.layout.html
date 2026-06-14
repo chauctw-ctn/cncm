@@ -1,0 +1,240 @@
+<div class="db">
+  <!-- ================= HEADER ================= -->
+  <div class="db-header">
+    <div class="db-brand">
+      <img src="/assets/images/logo.png" alt="CAWACO Logo" class="db-logo-img">
+
+      <div class="db-title-group">
+        <span class="db-title">CÔNG TY CỔ PHẦN CẤP NƯỚC CÀ MAU</span>
+        <span class="db-title-sub">ĐC: 204 Quang Trung, Phường 5, Thành phố Cà Mau</span>
+        <span class="db-title-sub">ĐT: 02903 836 360 - 02903 836 723</span>
+      </div>
+    </div>
+
+    <div class="db-user-section">
+      <span id="username-display" class="username-chip">--</span>
+
+      <div class="user-menu-container">
+        <button id="user-menu-btn" class="user-menu-btn" type="button" aria-label="Tài khoản">
+          <i class="material-icons-round">account_circle</i>
+          <i class="material-icons-round arrow-icon">expand_more</i>
+        </button>
+
+        <div class="user-dropdown" id="user-dropdown">
+          <div class="user-info">
+            <strong id="dropdown-username">--</strong>
+            <span id="dropdown-role">--</span>
+          </div>
+
+          <div class="dropdown-divider"></div>
+
+          <button class="dropdown-item" id="change-password-btn" type="button">
+            <i class="material-icons-round">lock</i>
+            Đổi mật khẩu
+          </button>
+
+          <button class="dropdown-item" id="add-user-btn" type="button" style="display:none;">
+            <i class="material-icons-round">person_add</i>
+            Thêm người dùng
+          </button>
+
+          <button class="dropdown-item" id="manage-users-btn" type="button" style="display:none;">
+            <i class="material-icons-round">manage_accounts</i>
+            Quản lý người dùng
+          </button>
+
+          <button class="dropdown-item" id="telegram-config-btn" type="button" style="display:none;">
+            <i class="material-icons-round">notifications</i>
+            Cấu hình Telegram
+          </button>
+
+          <button class="dropdown-item" id="coordinates-config-btn" type="button" style="display:none;">
+            <i class="material-icons-round">my_location</i>
+            Cấu hình tọa độ
+          </button>
+
+          <div class="dropdown-divider"></div>
+
+          <button class="dropdown-item logout-btn" id="logout-btn" type="button">
+            <i class="material-icons-round">logout</i>
+            Đăng xuất
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= BODY ================= -->
+  <div id="dynamic-pages-container" class="db-body-wrapper"></div>
+
+  <!-- ================= FOOTER ================= -->
+  <div class="db-footer">
+    <div class="footer-tab active" data-target="page-dashboard">DASHBOARD TỔNG QUAN</div>
+    <div class="footer-tab" data-target="page-bando">BẢN ĐỒ TRẠM QUAN TRẮC</div>
+    <div class="footer-tab" data-target="page-thongke">THỐNG KÊ DỮ LIỆU</div>
+    <div class="footer-tab" data-target="page-btnmt">DỮ LIỆU BỘ TÀI NGUYÊN</div>
+    <div class="footer-tab" data-target="page-thatthoat">THẤT THOÁT MẠNG LƯỚI</div>
+    <div class="footer-tab" data-target="page-caidat">CÀI ĐẶT CẤU HÌNH</div>
+    <div class="footer-tab" data-target="page-user">QUẢN LÝ NGƯỜI DÙNG</div>
+  </div>
+</div>
+
+<!-- ================= MODAL ĐỔI MẬT KHẨU ================= -->
+<div class="auth-modal" id="change-password-modal" aria-hidden="true">
+  <div class="auth-modal-content">
+    <div class="auth-modal-header">
+      <h2><i class="material-icons-round">lock</i> Đổi mật khẩu</h2>
+      <button class="auth-modal-close" type="button" data-auth-close="change-password-modal">
+        <i class="material-icons-round">close</i>
+      </button>
+    </div>
+
+    <div class="auth-modal-body">
+      <form id="change-password-form" class="auth-form">
+        <div class="auth-field">
+          <label class="auth-label" for="current-password">Mật khẩu hiện tại</label>
+          <input class="auth-input" type="password" id="current-password" required>
+        </div>
+
+        <div class="auth-field">
+          <label class="auth-label" for="new-password">Mật khẩu mới</label>
+          <input class="auth-input" type="password" id="new-password" required>
+        </div>
+
+        <div class="auth-field">
+          <label class="auth-label" for="confirm-password">Xác nhận mật khẩu mới</label>
+          <input class="auth-input" type="password" id="confirm-password" required>
+        </div>
+
+        <div class="auth-error" id="change-password-error"></div>
+
+        <div class="auth-actions">
+          <button class="auth-btn ghost" type="button" data-auth-close="change-password-modal">Hủy</button>
+          <button class="auth-btn primary" type="submit">Cập nhật</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL THÊM NGƯỜI DÙNG ================= -->
+<div class="auth-modal" id="add-user-modal" aria-hidden="true">
+  <div class="auth-modal-content">
+    <div class="auth-modal-header">
+      <h2><i class="material-icons-round">person_add</i> Thêm người dùng</h2>
+      <button class="auth-modal-close" type="button" data-auth-close="add-user-modal">
+        <i class="material-icons-round">close</i>
+      </button>
+    </div>
+
+    <div class="auth-modal-body">
+      <form id="add-user-form" class="auth-form">
+        <div class="auth-field">
+          <label class="auth-label" for="new-username">Tên đăng nhập</label>
+          <input class="auth-input" type="text" id="new-username" required>
+        </div>
+
+        <div class="auth-field">
+          <label class="auth-label" for="new-user-password">Mật khẩu</label>
+          <input class="auth-input" type="password" id="new-user-password" required>
+        </div>
+
+        <div class="auth-field">
+          <label class="auth-label" for="new-user-role">Vai trò</label>
+          <select class="auth-select" id="new-user-role">
+            <option value="user">Người dùng</option>
+            <option value="admin">Quản trị viên</option>
+          </select>
+        </div>
+
+        <div class="auth-error" id="add-user-error"></div>
+
+        <div class="auth-actions">
+          <button class="auth-btn ghost" type="button" data-auth-close="add-user-modal">Hủy</button>
+          <button class="auth-btn primary" type="submit">Lưu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL QUẢN LÝ NGƯỜI DÙNG ================= -->
+<div class="auth-modal" id="manage-users-modal" aria-hidden="true">
+  <div class="auth-modal-content auth-modal-wide">
+    <div class="auth-modal-header">
+      <h2><i class="material-icons-round">manage_accounts</i> Quản lý người dùng</h2>
+      <button class="auth-modal-close" type="button" data-auth-close="manage-users-modal">
+        <i class="material-icons-round">close</i>
+      </button>
+    </div>
+
+    <div class="auth-modal-body">
+      <div id="users-list-container" class="auth-user-list"></div>
+
+      <div class="auth-actions">
+        <button class="auth-btn ghost" type="button" data-auth-close="manage-users-modal">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL TELEGRAM ================= -->
+<div class="auth-modal" id="telegram-config-modal" aria-hidden="true">
+  <div class="auth-modal-content">
+    <div class="auth-modal-header">
+      <h2><i class="material-icons-round">notifications</i> Cấu hình Telegram</h2>
+      <button class="auth-modal-close" type="button" data-auth-close="telegram-config-modal">
+        <i class="material-icons-round">close</i>
+      </button>
+    </div>
+
+    <div class="auth-modal-body">
+      <form id="telegram-config-form" class="auth-form">
+        <div class="auth-field">
+          <label class="auth-label" for="telegram-bot-token">Bot Token</label>
+          <input class="auth-input" type="password" id="telegram-bot-token">
+        </div>
+
+        <div class="auth-field">
+          <label class="auth-label" for="telegram-chat-id">Chat ID</label>
+          <input class="auth-input" type="text" id="telegram-chat-id">
+        </div>
+
+        <div class="auth-error" id="telegram-config-error"></div>
+
+        <div class="auth-actions">
+          <button class="auth-btn ghost" type="button" data-auth-close="telegram-config-modal">Hủy</button>
+          <button class="auth-btn primary" type="submit">Lưu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL TỌA ĐỘ ================= -->
+<div class="auth-modal" id="coordinates-config-modal" aria-hidden="true">
+  <div class="auth-modal-content">
+    <div class="auth-modal-header">
+      <h2><i class="material-icons-round">my_location</i> Cấu hình tọa độ</h2>
+      <button class="auth-modal-close" type="button" data-auth-close="coordinates-config-modal">
+        <i class="material-icons-round">close</i>
+      </button>
+    </div>
+
+    <div class="auth-modal-body">
+      <form id="coordinates-config-form" class="auth-form">
+        <div class="auth-field">
+          <label class="auth-label" for="coordinates-json">Dữ liệu JSON tọa độ</label>
+          <textarea class="auth-input auth-textarea" id="coordinates-json" rows="7"></textarea>
+        </div>
+
+        <div class="auth-error" id="coordinates-config-error"></div>
+
+        <div class="auth-actions">
+          <button class="auth-btn ghost" type="button" data-auth-close="coordinates-config-modal">Đóng</button>
+          <button class="auth-btn primary" type="submit">Lưu</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

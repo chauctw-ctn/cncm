@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Trạm giám sát</title>
+
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lykmapipo/themify-icons@0.1.2/css/themify-icons.css">
+  <link rel="stylesheet" href="/page/layout/layout.css">
+
+  <style>
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    body {
+      position: relative;
+    }
+
+    #layout-container {
+      position: relative;
+      z-index: 1000;
+    }
+
+    .app-main {
+      position: fixed !important;
+      left: var(--sidebar-width, 260px);
+      right: 0;
+      top: var(--header-height, 70px);
+      bottom: 0;
+
+      width: auto !important;
+      height: auto !important;
+      min-width: 0;
+      min-height: 0;
+
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden;
+
+      background: #fff;
+      z-index: 1;
+      transition: left 0.25s ease;
+    }
+
+    body.sidebar-collapsed .app-main,
+    body.sidebar-hidden .app-main,
+    .sidebar-collapsed ~ .app-main,
+    .sidebar-hidden ~ .app-main {
+      left: var(--sidebar-collapsed-width, 70px);
+    }
+
+    #content-container {
+      position: absolute;
+      inset: 0;
+
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .embed-map-frame {
+      position: absolute;
+      inset: 0;
+
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+
+      margin: 0;
+      padding: 0;
+      border: 0;
+
+      display: block;
+      background: #fff;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="layout-container"></div>
+
+  <main class="app-main">
+    <div id="content-container">
+      <iframe
+        id="mapFrame"
+        class="embed-map-frame"
+        src="/page/map/map.html"
+        title="Bản đồ giám sát">
+      </iframe>
+    </div>
+  </main>
+
+  <script src="/page/layout/layout.js"></script>
+
+  <script>
+    const layoutContainer = document.getElementById("layout-container");
+    const mapFrame = document.getElementById("mapFrame");
+
+    function resizeMapInFrame() {
+      if (!mapFrame) return;
+
+      try {
+        const win = mapFrame.contentWindow;
+
+        if (!win) return;
+
+        win.dispatchEvent(new Event("resize"));
+
+        if (win.loggerMap && typeof win.loggerMap.invalidateSize === "function") {
+          win.loggerMap.invalidateSize();
+        }
+      } catch (error) {
+        console.warn("Không resize được iframe map:", error);
+      }
+    }
+
+    function resizeMapManyTimes() {
+      resizeMapInFrame();
+      setTimeout(resizeMapInFrame, 100);
+      setTimeout(resizeMapInFrame, 300);
+      setTimeout(resizeMapInFrame, 700);
+      setTimeout(resizeMapInFrame, 1200);
+    }
+
+    function syncMainPosition() {
+      const appMain = document.querySelector(".app-main");
+
+      if (!appMain) return;
+
+      const header =
+        layoutContainer.querySelector(".header") ||
+        layoutContainer.querySelector(".app-header") ||
+        layoutContainer.querySelector("header");
+
+      const sidebar =
+        layoutContainer.querySelector(".sidebar") ||
+        layoutContainer.querySelector(".app-sidebar") ||
+        layoutContainer.querySelector("aside");
+
+      const headerHeight = header
+        ? header.getBoundingClientRect().height
+        : 70;
+
+      let sidebarWidth = sidebar
+        ? sidebar.getBoundingClientRect().width
+        : 0;
+
+      if (sidebarWidth < 0) sidebarWidth = 0;
+
+      appMain.style.top = `${headerHeight}px`;
+      appMain.style.left = `${sidebarWidth}px`;
+
+      resizeMapManyTimes();
+    }
+
+    mapFrame.addEventListener("load", () => {
+      resizeMapManyTimes();
+    });
+
+    window.addEventListener("resize", () => {
+      syncMainPosition();
+    });
+
+    fetch("/page/layout/layout.html")
+      .then(r => r.text())
+      .then(layoutHtml => {
+        layoutContainer.innerHTML = layoutHtml;
+
+        if (window.initLayout) {
+          window.initLayout();
+        }
+
+        setTimeout(syncMainPosition, 50);
+        setTimeout(syncMainPosition, 300);
+        setTimeout(syncMainPosition, 700);
+      });
+
+    const observer = new MutationObserver(() => {
+      syncMainPosition();
+    });
+
+    observer.observe(document.body, {
+      attributes: true,
+      childList: true,
+      subtree: true,
+      attributeFilter: ["class", "style"]
+    });
+  </script>
+</body>
+</html>

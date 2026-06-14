@@ -89,15 +89,15 @@
                                 <circle cx="150" cy="175" r="5" fill="#0D0D0D"></circle>
                             </g>
 
-                            <text fill="#FFFFFF" font-size="22" font-weight="700" font-family="Arial">
+                            <text fill="#FFFFFF" font-size="15" font-weight="700" font-family="Arial">
                                 <tspan x="150" y="55" text-anchor="middle">${this.title}</tspan>
                             </text>
 
-                            <text fill="#F2F2F2" font-size="18" font-family="Arial">
+                            <text fill="#F2F2F2" font-size="15" font-family="Arial">
                                 <tspan x="150" y="210" text-anchor="middle">${this.unit}</tspan>
                             </text>
 
-                            <text fill="#FFFFFF" font-size="28" font-weight="700" font-family="Arial">
+                            <text fill="#FFFFFF" font-size="25" font-weight="700" font-family="Arial">
                                 <tspan class="gauge-value" x="150" y="255" text-anchor="middle">0</tspan>
                             </text>
                         </svg>
