@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Test Logger Map API</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f5f7fb;
+    }
+
+    .logger-card {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .logger-title {
+      font-weight: bold;
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .tag {
+      padding: 4px 0;
+    }
+
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Test API Logger Map</h2>
+
+  <button onclick="loadLoggerMap()">Load dữ liệu</button>
+
+  <div id="status"></div>
+  <div id="loggerList"></div>
+
+  <script>
+    async function loadLoggerMap() {
+      const statusEl = document.getElementById("status");
+      const listEl = document.getElementById("loggerList");
+
+      statusEl.textContent = "Đang tải dữ liệu...";
+      listEl.innerHTML = "";
+
+      try {
+        const res = await fetch("/api/logger/readings/map");
+        const json = await res.json();
+
+        if (!json.success) {
+          statusEl.innerHTML = `<p class="error">Lỗi API</p>`;
+          return;
+        }
+
+        statusEl.textContent = `Tổng logger: ${json.data.length}`;
+
+        json.data.forEach((logger) => {
+          const tagsHtml = Object.values(logger.tags || {})
+            .map((tag) => `
+              <div class="tag">
+                <b>${tag.tag_name}</b>:
+                ${tag.value ?? "--"} ${tag.unit || ""}
+                <small>(${tag.data_ts || "chưa có thời gian"})</small>
+              </div>
+            `)
+            .join("");
+
+          const card = document.createElement("div");
+          card.className = "logger-card";
+
+          card.innerHTML = `
+            <div class="logger-title">${logger.name}</div>
+            <div><b>ID:</b> ${logger.logger_id}</div>
+            <div><b>Nguồn:</b> ${logger.source}</div>
+            <div><b>Toạ độ:</b> ${logger.lat}, ${logger.lng}</div>
+            <hr>
+            ${tagsHtml || "<i>Chưa có tag</i>"}
+          `;
+
+          listEl.appendChild(card);
+        });
+      } catch (err) {
+        statusEl.innerHTML = `<p class="error">${err.message}</p>`;
+      }
+    }
+
+    loadLoggerMap();
+  </script>
+</body>
+</html>

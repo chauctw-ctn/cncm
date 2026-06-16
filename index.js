@@ -2,322 +2,184 @@
 
 const express = require("express");
 const path = require("path");
-const fs = require("fs");
-const sqlite3 = require("sqlite3").verbose();
 
-const dbWriter = require("./backend/db/writer");
-const sourcesApi = require("./backend/api/sources");
+const { saveLoggerPayloads, processNdjson } = require("./src/db/logger-writer");
 
-const mqttClientManager = require("./backend/Fetch/mqtt/client");
-const scadaClientManager = require("./backend/Fetch/scada/client");
-const tvaClientManager = require("./backend/Fetch/tva/client");
-const monreClientManager = require("./backend/Fetch/monre/client");
+const mqttClient = require("./src/sources/mqtt/client");
+const scadaClient = require("./src/sources/scada/client");
+const tvaClient = require("./src/sources/tva/client");
+const monreClient = require("./src/sources/monre/client");
+
+const loggerApi = require("./src/api/logger");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-console.log(`[HỆ THỐNG] Khởi động thu thập dữ liệu tập trung. Đích đến: ${dbWriter.MYSQL_DB_PATH}`);
+const PORT = Number(process.env.PORT) || 3000;
+const PUBLIC_DIR = path.join(__dirname, "public");
+const DB_PATH = path.join(__dirname, "data/mysql.db");
 
-// ==========================================
-// CẤU HÌNH FRONTEND
-// ==========================================
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static(PUBLIC_DIR));
 
-const FRONTEND_DIR = path.join(__dirname, "frontend");
+app.use("/api/logger", loggerApi);
 
-app.use(express.static(FRONTEND_DIR));
-
-app.use("/shared", express.static(path.join(FRONTEND_DIR, "shared")));
-app.use("/assets", express.static(path.join(FRONTEND_DIR, "assets")));
-app.use("/login", express.static(path.join(FRONTEND_DIR, "login")));
-app.use("/pages", express.static(path.join(FRONTEND_DIR, "pages")));
-
-// API tổng hợp flow, history, map-loggers...
-app.use("/api/sources", sourcesApi);
-
-// Trang chủ Dashboard KPI
-app.get("/", (req, res) => {
-    res.sendFile(path.join(FRONTEND_DIR, "index.html"));
+app.get("/api/health", (req, res) => {
+  res.json({
+    success: true,
+    message: "Server is running",
+    time: new Date().toISOString()
+  });
 });
 
-app.get("/index.html", (req, res) => {
-    res.sendFile(path.join(FRONTEND_DIR, "index.html"));
-});
+function savePayloads(payloads, sourceName) {
+  if (!Array.isArray(payloads) || payloads.length === 0) return;
 
-// Trang login
-app.get("/login", (req, res) => {
-    res.sendFile(path.join(FRONTEND_DIR, "login", "login.html"));
-});
+  saveLoggerPayloads(payloads, { dbPath: DB_PATH })
+    .then((result) => {
+      if (!result.success) {
+        console.error(`[${sourceName}][SAVE ERROR]`, result.error);
+        return;
+      }
 
-app.get("/login.html", (req, res) => {
-    res.sendFile(path.join(FRONTEND_DIR, "login", "login.html"));
-});
-
-// Các trang phụ nếu tách thành file riêng
-app.get("/page1", (req, res) => {
-    res.sendFile(path.join(FRONTEND_DIR, "pages", "page1.html"));
-});
-
-app.get("/page2", (req, res) => {
-    res.sendFile(path.join(FRONTEND_DIR, "pages", "page2.html"));
-});
-
-app.get("/page3", (req, res) => {
-    res.sendFile(path.join(FRONTEND_DIR, "pages", "page3.html"));
-});
-
-// ==========================================
-// API MAP LOGGER: /api/stations
-// ==========================================
-const LOGGER_COORDS_PATH = path.join(__dirname, "loggermap-helper", "modalsconfig.json");
-
-function readLoggerCoordinates() {
-    try {
-        const raw = fs.readFileSync(LOGGER_COORDS_PATH, "utf8");
-        const parsed = JSON.parse(raw);
-
-        return parsed.coordinates || parsed || {};
-    } catch (err) {
-        console.error("[API][stations] Khong doc duoc file toa do:", err.message || err);
-        return {};
-    }
+      console.log(
+        `[${sourceName}][SAVE] loggers=${result.loggers}, inserted=${result.inserted}`
+      );
+    })
+    .catch((err) => {
+      console.error(`[${sourceName}][SAVE ERROR]`, err.message || err);
+    });
 }
 
-function formatStationName(stationKey) {
-    const key = String(stationKey || "").toLowerCase();
+function startMqttService() {
+  try {
+    const client = mqttClient.connect();
 
-    if (key.startsWith("tb")) return `Trạm bơm ${key.replace("tb", "").toUpperCase()}`;
-    if (key.startsWith("qt")) return key.toUpperCase();
-    if (key.startsWith("gs")) return key.toUpperCase();
-    if (key.startsWith("g")) return `Logger ${key.toUpperCase()}`;
+    client.on("connect", () => {
+      console.log("[MQTT] Connected");
+      mqttClient.subscribe(client);
+    });
 
-    return key.toUpperCase();
+    client.on("reconnect", () => {
+      console.log("[MQTT] Reconnecting...");
+    });
+
+    client.on("error", (err) => {
+      console.error("[MQTT] Error:", err.message || err);
+    });
+
+    mqttClient.onMessage(client, (payloads) => {
+      savePayloads(payloads, "MQTT");
+    });
+
+    return client;
+  } catch (err) {
+    console.error("[MQTT] Start failed:", err.message || err);
+    return null;
+  }
 }
 
-function getStationType(stationId) {
-    const match = String(stationId || "").match(/^(mqtt|tva|scada)_/i);
-    return match ? match[1].toLowerCase() : "logger";
+function startScadaService() {
+  try {
+    const intervalMs = Number(process.env.SCADA_INTERVAL_MS) || 60000;
+
+    const timer = scadaClient.startPolling(
+      (payloads) => {
+        savePayloads(payloads, "SCADA");
+      },
+      intervalMs,
+      {
+        source: "scada"
+      }
+    );
+
+    console.log(`[SCADA] Polling every ${intervalMs}ms`);
+    return timer;
+  } catch (err) {
+    console.error("[SCADA] Start failed:", err.message || err);
+    return null;
+  }
 }
 
-function getUnit(parameter) {
-    const key = String(parameter || "").toLowerCase();
-
-    if (key === "flow") return "m3/h";
-    if (key === "level") return "m";
-    if (key === "ph") return "pH";
-    if (key === "tds") return "mg/L";
-
-    return "";
-}
-
-function buildStationsFromRows(rows, timeoutMinutes) {
-    const coordinates = readLoggerCoordinates();
-    const byStation = new Map();
-    const now = Date.now();
-
-    rows.forEach((row) => {
-        const stationId = row.station_id;
-        const stationKey = String(stationId || "").replace(/^(mqtt|tva|scada)_/i, "");
-        const coord = coordinates[stationKey];
-
-        if (!stationId || !coord) return;
-
-        const lat = Number(coord.lat);
-        const lng = Number(coord.lng ?? coord.lgn);
-
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-
-        if (!byStation.has(stationId)) {
-            const updateTime = row.saved_ts || row.data_ts || null;
-            const updateMs = updateTime ? new Date(updateTime).getTime() : NaN;
-            const diffMinutes = Number.isFinite(updateMs) ? (now - updateMs) / 60000 : Infinity;
-
-            byStation.set(stationId, {
-                id: stationId,
-                station_id: stationId,
-                raw_id: stationKey,
-                name: formatStationName(stationKey),
-                type: getStationType(stationId),
-                lat,
-                lng,
-                updateTime,
-                lastUpdateInDB: row.saved_ts || null,
-                timestamp: row.data_ts || null,
-                hasValueChange: diffMinutes <= timeoutMinutes,
-                data: []
-            });
-        }
-
-        byStation.get(stationId).data.push({
-            name: row.parameter,
-            value: row.value,
-            unit: getUnit(row.parameter)
+function startTvaService() {
+  try {
+    const jobs = tvaClient.scheduleTVAJobs({
+      db: DB_PATH,
+      source: "tva",
+      fetchIntervalMs: Number(process.env.TVA_FETCH_INTERVAL_MS) || 30000,
+      saveIntervalMinutes: Number(process.env.TVA_SAVE_INTERVAL_MINUTES) || 5,
+      processNdjson: (ndjson, options) => {
+        return processNdjson(ndjson, {
+          ...options,
+          dbPath: DB_PATH
         });
+      }
     });
 
-    return Array.from(byStation.values()).sort((a, b) => {
-        return a.name.localeCompare(b.name, "vi");
-    });
+    console.log("[TVA] Jobs started");
+    return jobs;
+  } catch (err) {
+    console.error("[TVA] Start failed:", err.message || err);
+    return null;
+  }
 }
 
-app.get("/api/stations", (req, res) => {
-    const timeoutMinutes = Math.max(1, Number(req.query.timeout) || 60);
-
-    const sql = `
-        WITH latest AS (
-            SELECT station_id, parameter, MAX(id) AS latest_id
-            FROM station_readings
-            GROUP BY station_id, parameter
-        )
-        SELECT sr.station_id, sr.parameter, sr.value, sr.data_ts, sr.saved_ts
-        FROM station_readings AS sr
-        INNER JOIN latest
-            ON latest.latest_id = sr.id
-        ORDER BY sr.station_id, sr.parameter
-    `;
-
-    const db = new sqlite3.Database(dbWriter.MYSQL_DB_PATH);
-
-    db.all(sql, (err, rows) => {
-        db.close();
-
-        if (err) {
-            console.error("[API][stations] Loi doc database:", err.message || err);
-
-            res.status(500).json({
-                success: false,
-                error: "Khong doc duoc du lieu tram"
-            });
-            return;
-        }
-
-        const stations = buildStationsFromRows(rows || [], timeoutMinutes);
-
-        res.json({
-            success: true,
-            timeout: timeoutMinutes,
-            total: stations.length,
-            serverTimestamp: new Date().toISOString(),
-            stations
+function startMonreService() {
+  try {
+    const jobs = monreClient.scheduleMonreJobs({
+      db: DB_PATH,
+      source: "monre",
+      fetchIntervalMs: Number(process.env.MONRE_FETCH_INTERVAL_MS) || 30000,
+      saveIntervalMinutes: Number(process.env.MONRE_SAVE_INTERVAL_MINUTES) || 5,
+      processNdjson: (ndjson, options) => {
+        return processNdjson(ndjson, {
+          ...options,
+          dbPath: DB_PATH
         });
+      }
     });
+
+    console.log("[MONRE] Jobs started");
+    return jobs;
+  } catch (err) {
+    console.error("[MONRE] Start failed:", err.message || err);
+    return null;
+  }
+}
+
+function startServices() {
+  console.log("[SERVICES] Starting...");
+
+  const services = {
+    mqtt: startMqttService(),
+    scada: startScadaService(),
+    tva: startTvaService(),
+    monre: startMonreService()
+  };
+
+  console.log("[SERVICES] Started");
+
+  return services;
+}
+
+app.use((req, res) => {
+  res.sendFile(path.join(PUBLIC_DIR, "index.html"));
 });
 
-// ==========================================
-// LOGIC THU THẬP DỮ LIỆU
-// ==========================================
-let latestMqttNormalized = [];
-let latestScadaNormalized = [];
+const server = app.listen(PORT, () => {
+  console.log(`[SERVER] http://localhost:${PORT}`);
 
-const mqttClient = mqttClientManager.connect();
-
-mqttClient.on("connect", () => {
-    mqttClientManager.subscribe(mqttClient);
-
-    mqttClientManager.onMessage(mqttClient, (mqttData) => {
-        if (!mqttData || !Array.isArray(mqttData)) return;
-        latestMqttNormalized.push(...mqttData);
-    });
+  startServices();
 });
 
-scadaClientManager.startPolling((scadaData) => {
-    latestScadaNormalized = scadaData;
-}, 30000);
+function shutdown() {
+  console.log("[SERVER] Shutting down...");
 
-const tvaJobs = tvaClientManager.scheduleTVAJobs({
-    processNdjson: dbWriter.processNdjson,
-    fetchIntervalMs: 30000,
-    saveIntervalMinutes: 5
-});
-
-const monreJobs = monreClientManager.scheduleMonreJobs({
-    processNdjson: dbWriter.processNdjson,
-    fetchIntervalMs: 30000,
-    saveIntervalMinutes: 5
-});
-
-let lastRunKey = null;
-
-const dbSaveTick = () => {
-    const now = new Date();
-    const minute = now.getMinutes();
-
-    if (minute % 5 !== 0) return;
-
-    const key = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}-${minute}`;
-    if (key === lastRunKey) return;
-
-    lastRunKey = key;
-
-    const pad = (value) => String(value).padStart(2, "0");
-
-    const saveTs = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(minute)}:00`;
-
-    if (latestMqttNormalized.length > 0) {
-        const mqttToSave = [...latestMqttNormalized];
-        latestMqttNormalized = [];
-
-        const mqttWithTs = mqttToSave.map((payload) => ({
-            ...payload,
-            ts: saveTs
-        }));
-
-        const mqttNdjson = mqttWithTs.map((payload) => JSON.stringify(payload)).join("\n");
-
-        dbWriter.processNdjson(mqttNdjson)
-            .then(({ inserted }) => {
-                console.log(`[MQTT][SAVE] ${saveTs} đã lưu thành công ${inserted} dòng.`);
-            })
-            .catch((err) => {
-                console.error("[MQTT][SAVE] Thất bại:", err.message || err);
-            });
-    }
-
-    if (latestScadaNormalized.length > 0) {
-        const scadaWithTs = latestScadaNormalized.map((payload) => ({
-            ...payload,
-            ts: saveTs
-        }));
-
-        const scadaNdjson = scadaWithTs.map((payload) => JSON.stringify(payload)).join("\n");
-
-        dbWriter.processNdjson(scadaNdjson)
-            .then(({ inserted }) => {
-                console.log(`[SCADA][SAVE] ${saveTs} đã lưu thành công ${inserted} dòng.`);
-            })
-            .catch((err) => {
-                console.error("[SCADA][SAVE] Thất bại:", err.message || err);
-            });
-    }
-};
-
-const globalSaveTimer = setInterval(dbSaveTick, 1000);
-
-// ==========================================
-// KHỞI CHẠY SERVER
-// ==========================================
-app.listen(PORT, () => {
-    console.log(`\n[SERVER] 🚀 Giao diện web chạy tại: http://localhost:${PORT}`);
-    console.log(`[SERVER] API stations: http://localhost:${PORT}/api/stations`);
-    console.log(`[SERVER] API sources: http://localhost:${PORT}/api/sources/map-loggers`);
-});
-
-// ==========================================
-// TẮT ỨNG DỤNG AN TOÀN
-// ==========================================
-process.on("SIGINT", () => {
-    console.log("\n[HỆ THỐNG] Đang đóng an toàn các bộ hẹn giờ cào dữ liệu...");
-
-    if (tvaJobs?.fetchTimer) clearInterval(tvaJobs.fetchTimer);
-    if (tvaJobs?.saveTimer) clearInterval(tvaJobs.saveTimer);
-
-    if (monreJobs?.fetchTimer) clearInterval(monreJobs.fetchTimer);
-    if (monreJobs?.saveTimer) clearInterval(monreJobs.saveTimer);
-
-    clearInterval(globalSaveTimer);
-
-    if (mqttClient) mqttClient.end();
-
+  server.close(() => {
+    console.log("[SERVER] Closed");
     process.exit(0);
-});
+  });
+}
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);

@@ -1,0 +1,117 @@
+<div id="app-layout" class="app-layout">
+    <header class="header">
+        <div class="header-content">
+            <button class="menu-btn" id="menu-btn" type="button" aria-label="Mở menu">☰</button>
+
+            <div class="logo-section">
+                <h1 class="company-name">CÔNG TY CỔ PHẦN CẤP NƯỚC CÀ MAU</h1>
+                <p class="company-address">Địa chỉ: 204 Quang Trung, phường 5, thành phố Cà Mau</p>
+                <p class="company-contact">
+                    <span>Điện thoại:</span> 02903 836 360 - 02903 836 723
+                </p>
+            </div>
+
+            <div class="auth-section">
+                <span id="username-display"></span>
+
+                <div class="user-menu-container">
+                    <button id="user-menu-btn" class="user-menu-btn" type="button">
+                        <span class="user-icon">👤</span>
+                        <span class="arrow-icon">▾</span>
+                    </button>
+
+                    <div class="user-dropdown" id="user-dropdown">
+                        <div class="user-info">
+                            <strong id="dropdown-username"></strong>
+                            <span id="dropdown-role"></span>
+                        </div>
+
+                        <div class="dropdown-divider"></div>
+
+                        <button class="dropdown-item" id="change-password-btn" type="button">Đổi mật khẩu</button>
+                        <button class="dropdown-item admin-only" id="add-user-btn" type="button">Thêm người dùng</button>
+                        <button class="dropdown-item admin-only" id="manage-users-btn" type="button">Quản lý người dùng</button>
+                        <button class="dropdown-item admin-only" id="telegram-config-btn" type="button">Cấu hình Telegram</button>
+                        <button class="dropdown-item admin-only" id="coordinates-config-btn" type="button">Cấu hình tọa độ</button>
+
+                        <div class="dropdown-divider"></div>
+
+                        <button class="dropdown-item logout-btn" id="logout-btn" type="button">Đăng xuất</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <nav class="sidebar-nav" id="sidebar-nav">
+        <a class="sidebar-link" href="/page/dashboard.html" style="--delay:0">
+            <span class="hex-icon">⌂</span>
+            <span class="sidebar-text">Dashboard</span>
+        </a>
+
+        <a class="sidebar-link" href="/page/map.html" style="--delay:1">
+            <span class="hex-icon">⌖</span>
+            <span class="sidebar-text">Bản đồ logger</span>
+        </a>
+
+        <a class="sidebar-link" href="/page/water-quality.html" style="--delay:2">
+            <span class="hex-icon">≈</span>
+            <span class="sidebar-text">Chất lượng nước</span>
+        </a>
+
+        <a class="sidebar-link" href="/page/historical-data.html" style="--delay:3">
+            <span class="hex-icon">▥</span>
+            <span class="sidebar-text">Thống kê dữ liệu</span>
+        </a>
+
+        <a class="sidebar-link" href="/page/monre-data.html" style="--delay:4">
+            <span class="hex-icon">◷</span>
+            <span class="sidebar-text">Dữ liệu BTNMT</span>
+        </a>
+
+        <a class="sidebar-link" href="/page/donre-data.html" style="--delay:5">
+            <span class="hex-icon">◎</span>
+            <span class="sidebar-text">Dữ liệu STNMT</span>
+        </a>
+
+        <a class="sidebar-link" href="/page/settings.html" style="--delay:6">
+            <span class="hex-icon">⚙</span>
+            <span class="sidebar-text">Cài đặt</span>
+        </a>
+    </nav>
+
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <div class="auth-modal" id="change-password-modal" aria-hidden="true">
+        <div class="auth-modal-content">
+            <div class="auth-modal-header">
+                <h2>Đổi mật khẩu</h2>
+                <button class="auth-modal-close" type="button" data-auth-close="change-password-modal">&times;</button>
+            </div>
+
+            <form id="change-password-form" class="auth-form">
+                <label>
+                    <span>Mật khẩu hiện tại</span>
+                    <input class="auth-input" type="password" id="current-password" required>
+                </label>
+
+                <label>
+                    <span>Mật khẩu mới</span>
+                    <input class="auth-input" type="password" id="new-password" required>
+                </label>
+
+                <label>
+                    <span>Nhập lại mật khẩu mới</span>
+                    <input class="auth-input" type="password" id="confirm-password" required>
+                </label>
+
+                <div class="auth-error" id="change-password-error"></div>
+
+                <div class="auth-actions">
+                    <button class="auth-btn ghost" type="button" data-auth-close="change-password-modal">Hủy</button>
+                    <button class="auth-btn primary" type="submit">Cập nhật</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

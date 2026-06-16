@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cấu hình Logger</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      color: #1f2937;
+    }
+
+    header {
+      background: #0f172a;
+      color: white;
+      padding: 14px 20px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .page {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 16px;
+      padding: 16px;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .logger-item {
+      padding: 10px;
+      border-bottom: 1px solid #e5e7eb;
+      cursor: pointer;
+    }
+
+    .logger-item:hover {
+      background: #eef2ff;
+    }
+
+    .logger-item.active {
+      background: #dbeafe;
+      font-weight: bold;
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    input, select {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px;
+      margin-top: 4px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+    }
+
+    input[type="checkbox"] {
+      width: auto;
+    }
+
+    button {
+      padding: 8px 12px;
+      margin: 6px 4px 6px 0;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #2563eb;
+      color: white;
+    }
+
+    button.danger {
+      background: #dc2626;
+    }
+
+    button.gray {
+      background: #64748b;
+    }
+
+    button.green {
+      background: #16a34a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+
+    th, td {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 8px;
+      text-align: left;
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    th {
+      background: #f8fafc;
+    }
+
+    .tag-input {
+      width: 130px;
+    }
+
+    .value-box {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .value-card {
+      background: #f8fafc;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .value-card b {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .hint {
+      font-size: 13px;
+      color: #64748b;
+      margin-top: 6px;
+    }
+
+    .copy-box {
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 12px;
+      background: #f8fafc;
+      margin-top: 8px;
+    }
+
+    pre {
+      background: #111827;
+      color: #d1fae5;
+      padding: 12px;
+      border-radius: 8px;
+      overflow: auto;
+      max-height: 260px;
+    }
+  </style>
+</head>
+
+<body>
+<header>Cấu hình Logger</header>
+
+<div class="page">
+  <div class="panel">
+    <h3>Danh sách logger</h3>
+    <button onclick="loadLoggers()">Tải lại</button>
+    <div id="loggerList"></div>
+  </div>
+
+  <div class="panel">
+    <h3>Thông tin logger đang sửa</h3>
+
+    <label>Logger ID</label>
+    <input id="logger_id" readonly>
+
+    <label>Nguồn</label>
+    <input id="source" readonly>
+
+    <label>Raw ID</label>
+    <input id="raw_id">
+
+    <label>Tên hiển thị trên map</label>
+    <input id="name">
+
+    <div class="grid-2">
+      <div>
+        <label>Latitude</label>
+        <input id="lat" type="number" step="0.000001">
+      </div>
+      <div>
+        <label>Longitude</label>
+        <input id="lng" type="number" step="0.000001">
+      </div>
+    </div>
+
+    <label>Enabled</label>
+    <select id="enabled">
+      <option value="1">Bật</option>
+      <option value="0">Tắt</option>
+    </select>
+
+    <button onclick="saveLogger()">Lưu logger đang sửa</button>
+    <button class="danger" onclick="deleteLogger()">Xoá logger đang sửa</button>
+
+    <h3>Thông số hiện tại của logger đang sửa</h3>
+    <div id="latestValues" class="value-box"></div>
+
+    <h3>Tags thuộc logger đang sửa</h3>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Tag key</th>
+          <th>Tên hiển thị</th>
+          <th>Đơn vị</th>
+          <th>Enabled</th>
+          <th>Giá trị</th>
+          <th>Thao tác</th>
+        </tr>
+      </thead>
+      <tbody id="tagTable"></tbody>
+    </table>
+
+    <h3>Thêm tag mới cho logger đang sửa</h3>
+
+    <div class="copy-box">
+      <label>Chọn logger nguồn để lấy tag</label>
+      <select id="source_logger_select" onchange="loadSourceLoggerTags()">
+        <option value="">-- Chọn logger nguồn --</option>
+      </select>
+
+      <div class="hint">
+        Ví dụ: đang sửa g45, chọn g14 hoặc g16 ở đây để xem các tag của g14/g16, sau đó tick tag cần thêm vào g45.
+      </div>
+
+      <button class="gray" onclick="checkAllSourceTags(true)">Chọn tất cả tag</button>
+      <button class="gray" onclick="checkAllSourceTags(false)">Bỏ chọn tag</button>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Chọn</th>
+            <th>Tag key</th>
+            <th>Tên tag</th>
+            <th>Đơn vị</th>
+            <th>Giá trị logger nguồn</th>
+            <th>Thời gian</th>
+          </tr>
+        </thead>
+        <tbody id="sourceTagTable">
+          <tr>
+            <td colspan="6"><i>Chưa chọn logger nguồn</i></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <button class="green" onclick="copySelectedTagsToEditingLogger()">
+        Thêm tag đã tick vào logger đang sửa
+      </button>
+    </div>
+
+    <h3>Thêm tag thủ công</h3>
+
+    <div class="grid-2">
+      <div>
+        <label>Tag key</label>
+        <input id="manual_tag_key" placeholder="flow">
+      </div>
+      <div>
+        <label>Display order</label>
+        <input id="manual_display_order" type="number" value="0">
+      </div>
+    </div>
+
+    <label>Tên tag hiển thị trên map</label>
+    <input id="manual_tag_name" placeholder="Lưu lượng">
+
+    <label>Đơn vị</label>
+    <input id="manual_unit" placeholder="m³/h">
+
+    <button onclick="addManualTagToEditingLogger()">Thêm tag thủ công vào logger đang sửa</button>
+
+    <h3>Response</h3>
+    <pre id="output">Chưa có dữ liệu</pre>
+  </div>
+</div>
+
+<script>
+let loggers = [];
+let selectedLoggerId = null;
+let sourceLoggerTags = [];
+
+function show(data) {
+  document.getElementById("output").textContent = JSON.stringify(data, null, 2);
+}
+
+async function api(url, options = {}) {
+  try {
+    const res = await fetch(url, options);
+    const json = await res.json();
+    show(json);
+    return json;
+  } catch (err) {
+    const json = { success: false, message: err.message };
+    show(json);
+    return json;
+  }
+}
+
+async function loadLoggers() {
+  const json = await api("/api/logger/readings/map");
+  if (!json.success) return;
+
+  loggers = json.data || [];
+
+  renderLoggerList();
+  renderSourceLoggerSelect();
+
+  if (selectedLoggerId) {
+    const stillExists = loggers.some(x => x.logger_id === selectedLoggerId);
+    if (stillExists) {
+      await selectLogger(selectedLoggerId);
+    }
+  }
+}
+
+function renderLoggerList() {
+  const list = document.getElementById("loggerList");
+  list.innerHTML = "";
+
+  loggers.forEach(logger => {
+    const div = document.createElement("div");
+    div.className = "logger-item";
+    div.dataset.id = logger.logger_id;
+
+    div.innerHTML = `
+      <div>${escapeHtml(logger.name || logger.logger_id)}</div>
+      <small>${escapeHtml(logger.logger_id)}</small><br>
+      <small>${logger.lat ?? "--"}, ${logger.lng ?? "--"}</small>
+    `;
+
+    div.onclick = () => selectLogger(logger.logger_id);
+    list.appendChild(div);
+  });
+}
+
+function renderSourceLoggerSelect() {
+  const select = document.getElementById("source_logger_select");
+  const currentValue = select.value;
+
+  select.innerHTML = `<option value="">-- Chọn logger nguồn --</option>`;
+
+  loggers.forEach(logger => {
+    const option = document.createElement("option");
+    option.value = logger.logger_id;
+    option.textContent = `${logger.name || logger.logger_id} (${logger.logger_id})`;
+    select.appendChild(option);
+  });
+
+  if (currentValue && loggers.some(x => x.logger_id === currentValue)) {
+    select.value = currentValue;
+  }
+}
+
+async function selectLogger(loggerId) {
+  selectedLoggerId = loggerId;
+
+  document.querySelectorAll(".logger-item").forEach(el => {
+    el.classList.toggle("active", el.dataset.id === loggerId);
+  });
+
+  const logger = loggers.find(x => x.logger_id === loggerId);
+  if (!logger) return;
+
+  document.getElementById("logger_id").value = logger.logger_id || "";
+  document.getElementById("source").value = logger.source || "";
+  document.getElementById("raw_id").value = logger.raw_id || "";
+  document.getElementById("name").value = logger.name || "";
+  document.getElementById("lat").value = logger.lat ?? "";
+  document.getElementById("lng").value = logger.lng ?? "";
+  document.getElementById("enabled").value = String(logger.enabled ?? 1);
+
+  renderLatest(logger);
+  await loadTags(loggerId);
+}
+
+function renderLatest(logger) {
+  const box = document.getElementById("latestValues");
+  box.innerHTML = "";
+
+  const tags = Object.values(logger.tags || {});
+
+  if (tags.length === 0) {
+    box.innerHTML = "<i>Chưa có thông số latest</i>";
+    return;
+  }
+
+  tags.forEach(tag => {
+    const div = document.createElement("div");
+    div.className = "value-card";
+
+    div.innerHTML = `
+      <b>${escapeHtml(tag.tag_name || tag.tag_key)}</b>
+      <div>${tag.value ?? "--"} ${escapeHtml(tag.unit || "")}</div>
+      <small>${escapeHtml(tag.data_ts || "")}</small>
+    `;
+
+    box.appendChild(div);
+  });
+}
+
+async function loadTags(loggerId) {
+  const json = await api(`/api/logger/tags/${encodeURIComponent(loggerId)}`);
+  if (!json.success) return;
+
+  const tbody = document.getElementById("tagTable");
+  tbody.innerHTML = "";
+
+  if (!json.data || json.data.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6"><i>Logger này chưa có tag</i></td>
+      </tr>
+    `;
+    return;
+  }
+
+  json.data.forEach(tag => {
+    const safeKey = cssSafe(tag.tag_key);
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${escapeHtml(tag.tag_key)}</td>
+      <td>
+        <input class="tag-input" id="name_${safeKey}" value="${escapeHtml(tag.tag_name || "")}">
+      </td>
+      <td>
+        <input class="tag-input" id="unit_${safeKey}" value="${escapeHtml(tag.unit || "")}">
+      </td>
+      <td>
+        <select id="enabled_${safeKey}">
+          <option value="1" ${tag.enabled == 1 ? "selected" : ""}>Bật</option>
+          <option value="0" ${tag.enabled == 0 ? "selected" : ""}>Tắt</option>
+        </select>
+      </td>
+      <td>
+        ${tag.value ?? "--"} ${escapeHtml(tag.unit || "")}
+        <br>
+        <small>${escapeHtml(tag.data_ts || "")}</small>
+      </td>
+      <td>
+        <button onclick="saveTag('${escapeJs(tag.tag_key)}')">Lưu</button>
+        <button class="danger" onclick="deleteTag('${escapeJs(tag.tag_key)}')">Xoá</button>
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+}
+
+async function saveLogger() {
+  if (!selectedLoggerId) {
+    alert("Chưa chọn logger");
+    return;
+  }
+
+  const body = {
+    raw_id: document.getElementById("raw_id").value,
+    name: document.getElementById("name").value,
+    lat: toNullableNumber(document.getElementById("lat").value),
+    lng: toNullableNumber(document.getElementById("lng").value),
+    enabled: Number(document.getElementById("enabled").value)
+  };
+
+  const json = await api(`/api/logger/points/${encodeURIComponent(selectedLoggerId)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+
+  if (json.success) {
+    await loadLoggers();
+  }
+}
+
+async function deleteLogger() {
+  if (!selectedLoggerId) {
+    alert("Chưa chọn logger");
+    return;
+  }
+
+  if (!confirm(`Xoá logger ${selectedLoggerId}?`)) return;
+
+  const json = await api(`/api/logger/points/${encodeURIComponent(selectedLoggerId)}`, {
+    method: "DELETE"
+  });
+
+  if (json.success) {
+    selectedLoggerId = null;
+    clearLoggerForm();
+    await loadLoggers();
+  }
+}
+
+async function saveTag(tagKey) {
+  if (!selectedLoggerId) return;
+
+  const safeKey = cssSafe(tagKey);
+
+  const body = {
+    tag_name: document.getElementById(`name_${safeKey}`).value,
+    unit: document.getElementById(`unit_${safeKey}`).value,
+    enabled: Number(document.getElementById(`enabled_${safeKey}`).value)
+  };
+
+  const json = await api(
+    `/api/logger/tags/${encodeURIComponent(selectedLoggerId)}/${encodeURIComponent(tagKey)}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    }
+  );
+
+  if (json.success) {
+    await loadLoggers();
+  }
+}
+
+async function deleteTag(tagKey) {
+  if (!selectedLoggerId) return;
+  if (!confirm(`Xoá tag ${tagKey} khỏi ${selectedLoggerId}?`)) return;
+
+  const json = await api(
+    `/api/logger/tags/${encodeURIComponent(selectedLoggerId)}/${encodeURIComponent(tagKey)}`,
+    { method: "DELETE" }
+  );
+
+  if (json.success) {
+    await loadLoggers();
+  }
+}
+
+async function loadSourceLoggerTags() {
+  const sourceLoggerId = document.getElementById("source_logger_select").value;
+
+  sourceLoggerTags = [];
+  const tbody = document.getElementById("sourceTagTable");
+
+  if (!sourceLoggerId) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6"><i>Chưa chọn logger nguồn</i></td>
+      </tr>
+    `;
+    return;
+  }
+
+  const json = await api(`/api/logger/tags/${encodeURIComponent(sourceLoggerId)}`);
+  if (!json.success) return;
+
+  sourceLoggerTags = json.data || [];
+  renderSourceTagTable();
+}
+
+function renderSourceTagTable() {
+  const tbody = document.getElementById("sourceTagTable");
+  tbody.innerHTML = "";
+
+  if (!sourceLoggerTags.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6"><i>Logger nguồn chưa có tag</i></td>
+      </tr>
+    `;
+    return;
+  }
+
+  sourceLoggerTags.forEach(tag => {
+    const safeKey = cssSafe(tag.tag_key);
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>
+        <input type="checkbox" class="source-tag-check" value="${escapeHtml(tag.tag_key)}" data-safe-key="${safeKey}">
+      </td>
+      <td>${escapeHtml(tag.tag_key)}</td>
+      <td>${escapeHtml(tag.tag_name || tag.tag_key)}</td>
+      <td>${escapeHtml(tag.unit || "")}</td>
+      <td>${tag.value ?? "--"} ${escapeHtml(tag.unit || "")}</td>
+      <td>${escapeHtml(tag.data_ts || "")}</td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+}
+
+function checkAllSourceTags(checked) {
+  document.querySelectorAll(".source-tag-check").forEach(cb => {
+    cb.checked = checked;
+  });
+}
+
+function getCheckedSourceTags() {
+  const checkedKeys = Array.from(document.querySelectorAll(".source-tag-check:checked"))
+    .map(cb => cb.value);
+
+  return sourceLoggerTags.filter(tag => checkedKeys.includes(tag.tag_key));
+}
+
+async function copySelectedTagsToEditingLogger() {
+  if (!selectedLoggerId) {
+    alert("Chưa chọn logger đang sửa");
+    return;
+  }
+
+  const sourceLoggerId = document.getElementById("source_logger_select").value;
+
+  if (!sourceLoggerId) {
+    alert("Chưa chọn logger nguồn");
+    return;
+  }
+
+  const selectedTags = getCheckedSourceTags();
+
+  if (!selectedTags.length) {
+    alert("Chưa tick tag cần thêm");
+    return;
+  }
+
+  const results = [];
+
+  for (const tag of selectedTags) {
+    const body = {
+      tag_key: tag.tag_key,
+      tag_name: tag.tag_name || tag.tag_key,
+      unit: tag.unit || "",
+      enabled: 1,
+      min_value: tag.min_value ?? null,
+      max_value: tag.max_value ?? null,
+      display_order: tag.display_order ?? 0
+    };
+
+    const result = await api(`/api/logger/tags/${encodeURIComponent(selectedLoggerId)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    results.push({
+      tag_key: tag.tag_key,
+      success: result.success,
+      message: result.message
+    });
+  }
+
+  show({
+    success: true,
+    action: "copy_tags_to_editing_logger",
+    from_logger: sourceLoggerId,
+    to_logger: selectedLoggerId,
+    total: selectedTags.length,
+    results
+  });
+
+  await loadLoggers();
+  await selectLogger(selectedLoggerId);
+}
+
+async function addManualTagToEditingLogger() {
+  if (!selectedLoggerId) {
+    alert("Chưa chọn logger đang sửa");
+    return;
+  }
+
+  const tagKey = document.getElementById("manual_tag_key").value.trim();
+
+  if (!tagKey) {
+    alert("Chưa nhập tag_key");
+    return;
+  }
+
+  const body = {
+    tag_key: tagKey,
+    tag_name: document.getElementById("manual_tag_name").value.trim() || tagKey,
+    unit: document.getElementById("manual_unit").value.trim(),
+    enabled: 1,
+    display_order: Number(document.getElementById("manual_display_order").value || 0)
+  };
+
+  const json = await api(`/api/logger/tags/${encodeURIComponent(selectedLoggerId)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+
+  if (json.success) {
+    document.getElementById("manual_tag_key").value = "";
+    document.getElementById("manual_tag_name").value = "";
+    document.getElementById("manual_unit").value = "";
+
+    await loadLoggers();
+    await selectLogger(selectedLoggerId);
+  }
+}
+
+function clearLoggerForm() {
+  ["logger_id", "source", "raw_id", "name", "lat", "lng"].forEach(id => {
+    document.getElementById(id).value = "";
+  });
+
+  document.getElementById("enabled").value = "1";
+  document.getElementById("tagTable").innerHTML = "";
+  document.getElementById("latestValues").innerHTML = "";
+}
+
+function toNullableNumber(value) {
+  if (value === "" || value === null || value === undefined) return null;
+  const num = Number(value);
+  return Number.isNaN(num) ? null : num;
+}
+
+function cssSafe(value) {
+  return String(value).replace(/[^a-zA-Z0-9_-]/g, "_");
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function escapeJs(value) {
+  return String(value)
+    .replaceAll("\\", "\\\\")
+    .replaceAll("'", "\\'");
+}
+
+loadLoggers();
+</script>
+
+</body>
+</html>

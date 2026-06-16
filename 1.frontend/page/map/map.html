@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Bản đồ Logger</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lykmapipo/themify-icons@0.1.2/css/themify-icons.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="map.css">
+</head>
+
+<body>
+  <div id="page-bando">
+    <div class="map-container">
+      <div class="map-overlay-toolbar">
+        <select id="groupFilter" class="group-filter">
+          <option value="all">Tất cả nhóm</option>
+        </select>
+        <div class="map-card online">
+          <div>Online</div>
+          <strong id="onlineCount">0</strong>
+        </div>
+        <div class="map-card total">
+          <div>Tổng trạm</div>
+          <strong id="totalCount">0</strong>
+        </div>
+      </div>
+      <div id="loggerMap"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="map.js"></script>
+</body>
+</html>

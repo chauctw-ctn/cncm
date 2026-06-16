@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Layout</title>
+
+    <link rel="stylesheet" href="/page/layout/layout.css">
+</head>
+
+<body>
+    <div id="layout-container"></div>
+
+    <main class="page-content">
+        <h2>Test Layout</h2>
+        <p>Nếu thấy header + sidebar có màu, CSS đã ăn.</p>
+    </main>
+
+    <script>
+        async function loadLayout() {
+            const res = await fetch("/page/layout/layout.html");
+
+            if (!res.ok) {
+                console.error("Không load được layout.html", res.status);
+                return;
+            }
+
+            document.getElementById("layout-container").innerHTML =
+                await res.text();
+
+            const script = document.createElement("script");
+            script.src = "/page/layout/layout.js";
+            script.onload = () => window.initLayout?.();
+
+            document.body.appendChild(script);
+        }
+
+        loadLayout();
+    </script>
+</body>
+</html>

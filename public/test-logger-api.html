@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Logger API</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f4f6f9; }
+    section { background: white; padding: 16px; margin-bottom: 16px; border-radius: 10px; }
+    input, select, button { padding: 8px; margin: 4px; }
+    button { cursor: pointer; }
+    pre { background: #111827; color: #d1fae5; padding: 12px; border-radius: 8px; overflow: auto; }
+  </style>
+</head>
+<body>
+
+<h2>Test Logger API</h2>
+
+<section>
+  <h3>1. Logger Points</h3>
+
+  <button onclick="getPoints()">GET /api/logger/points</button>
+
+  <br>
+
+  <input id="logger_id" placeholder="logger_id" value="mqtt_g18">
+  <input id="source" placeholder="source" value="mqtt">
+  <input id="raw_id" placeholder="raw_id" value="g18">
+  <input id="name" placeholder="name" value="Logger G18">
+  <input id="lat" placeholder="lat" value="9.175669">
+  <input id="lng" placeholder="lng" value="105.170509">
+
+  <br>
+
+  <button onclick="postPoint()">POST Point</button>
+  <button onclick="putPoint()">PUT Point</button>
+  <button onclick="deletePoint()">DELETE Point</button>
+</section>
+
+<section>
+  <h3>2. Logger Tags</h3>
+
+  <input id="tag_logger_id" placeholder="logger_id" value="mqtt_g18">
+  <input id="tag_key" placeholder="tag_key" value="flow">
+  <input id="tag_name" placeholder="tag_name" value="Lưu lượng">
+  <input id="unit" placeholder="unit" value="m³/h">
+  <input id="display_order" placeholder="display_order" value="1">
+
+  <br>
+
+  <button onclick="getTags()">GET Tags</button>
+  <button onclick="postTag()">POST Tag</button>
+  <button onclick="putTag()">PUT Tag</button>
+  <button onclick="deleteTag()">DELETE Tag</button>
+</section>
+
+<section>
+  <h3>3. Map / Latest / History</h3>
+
+  <button onclick="getMap()">GET Map</button>
+  <button onclick="getLatest()">GET Latest</button>
+
+  <br>
+
+  <input id="history_logger_id" placeholder="logger_id" value="mqtt_g18">
+  <input id="history_tag_key" placeholder="tag_key" value="flow">
+  <button onclick="getHistory()">GET History</button>
+</section>
+
+<section>
+  <h3>Response</h3>
+  <pre id="output">Chưa có dữ liệu</pre>
+</section>
+
+<script>
+const output = document.getElementById("output");
+
+function show(data) {
+  output.textContent = JSON.stringify(data, null, 2);
+}
+
+async function api(url, options = {}) {
+  try {
+    const res = await fetch(url, options);
+    const json = await res.json();
+    show(json);
+  } catch (err) {
+    show({ success: false, message: err.message });
+  }
+}
+
+function getPoints() {
+  api("/api/logger/points");
+}
+
+function postPoint() {
+  const body = {
+    logger_id: logger_id.value,
+    source: source.value,
+    raw_id: raw_id.value,
+    name: name.value,
+    lat: Number(lat.value),
+    lng: Number(lng.value),
+    enabled: 1,
+    tags: [
+      { tag_key: "level", tag_name: "Mực nước", unit: "m", display_order: 1 },
+      { tag_key: "flow", tag_name: "Lưu lượng", unit: "m³/h", display_order: 2 },
+      { tag_key: "totalIndex", tag_name: "Tổng lưu lượng", unit: "m³", display_order: 3 }
+    ]
+  };
+
+  api("/api/logger/points", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+}
+
+function putPoint() {
+  const id = logger_id.value;
+
+  const body = {
+    source: source.value,
+    raw_id: raw_id.value,
+    name: name.value,
+    lat: Number(lat.value),
+    lng: Number(lng.value),
+    enabled: 1
+  };
+
+  api(`/api/logger/points/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+}
+
+function deletePoint() {
+  const id = logger_id.value;
+
+  api(`/api/logger/points/${id}`, {
+    method: "DELETE"
+  });
+}
+
+function getTags() {
+  api(`/api/logger/tags/${tag_logger_id.value}`);
+}
+
+function postTag() {
+  const body = {
+    tag_key: tag_key.value,
+    tag_name: tag_name.value,
+    unit: unit.value,
+    enabled: 1,
+    display_order: Number(display_order.value)
+  };
+
+  api(`/api/logger/tags/${tag_logger_id.value}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+}
+
+function putTag() {
+  const body = {
+    tag_name: tag_name.value,
+    unit: unit.value,
+    enabled: 1,
+    display_order: Number(display_order.value)
+  };
+
+  api(`/api/logger/tags/${tag_logger_id.value}/${tag_key.value}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+}
+
+function deleteTag() {
+  api(`/api/logger/tags/${tag_logger_id.value}/${tag_key.value}`, {
+    method: "DELETE"
+  });
+}
+
+function getMap() {
+  api("/api/logger/readings/map");
+}
+
+function getLatest() {
+  api("/api/logger/readings/latest");
+}
+
+function getHistory() {
+  const loggerId = history_logger_id.value;
+  const tagKey = history_tag_key.value;
+
+  api(`/api/logger/readings/history?logger_id=${loggerId}&tag_key=${tagKey}&limit=100`);
+}
+
+getPoints();
+</script>
+
+</body>
+</html>

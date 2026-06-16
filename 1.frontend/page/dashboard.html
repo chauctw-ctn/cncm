@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard tổng quan</title>
+
+    <link rel="stylesheet" href="/page/layout/layout.css">
+    <link rel="stylesheet" href="/shared/gauge.css">
+    <link rel="stylesheet" href="/page/dashboard/dashboard.css">
+</head>
+<body>
+
+<div id="layout-root"></div>
+
+<main class="page-content">
+
+    <section class="dashboard-kpi">
+        <div id="Gauge_01"></div>
+        <div id="Gauge_02"></div>
+        <div id="Gauge_03"></div>
+        <div id="Gauge_04"></div>
+        <div id="Gauge_05"></div>
+        <div id="Gauge_06"></div>
+    </section>
+
+    <section class="dashboard-chart">
+        <div class="chart-header">
+            <h3>BIỂU ĐỒ LƯU LƯỢNG THEO GIẤY PHÉP BỘ TNMT</h3>
+            <span id="flowHistoryStatus">Đang tải...</span>
+        </div>
+
+        <div class="chart-box">
+            <canvas id="flowHistoryChart"></canvas>
+        </div>
+    </section>
+
+</main>
+
+<script src="/page/page-loader.js"></script>
+<script src="/shared/gauge.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/page/dashboard/dashboard.js"></script>
+
+<script>
+    if (typeof initDashboard === "function") {
+        initDashboard();
+    }
+</script>
+
+</body>
+</html>
