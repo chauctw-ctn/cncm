@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Logger Map</title>
+  <link rel="stylesheet" href="/shared/layout.css">
+  <script src="/shared/auth.js"></script>
+  <script src="/shared/layout.js"></script>
+</head>
+
+<body>
+<main class="page-content">
+  <div class="card">
+    <h2>Logger Map</h2>
+    <button onclick="loadMap()">Tải dữ liệu</button>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Logger</th>
+          <th>Nguồn</th>
+          <th>Toạ độ</th>
+          <th>Tags</th>
+        </tr>
+      </thead>
+      <tbody id="mapTable"></tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+AppLayout.initLayout("Logger Map");
+
+async function loadMap() {
+  const res = await fetch("/api/logger/readings/map");
+  const json = await res.json();
+
+  if (!json.success) return alert("Lỗi tải dữ liệu");
+
+  mapTable.innerHTML = json.data.map(l => `
+    <tr>
+      <td>${l.name || l.logger_id}<br><small>${l.logger_id}</small></td>
+      <td>${l.source}</td>
+      <td>${l.lat}, ${l.lng}</td>
+      <td>
+        ${Object.values(l.tags || {}).map(t =>
+          `<div><b>${t.tag_name || t.tag_key}</b>: ${t.value ?? "--"} ${t.unit || ""}</div>`
+        ).join("")}
+      </td>
+    </tr>
+  `).join("");
+}
+
+loadMap();
+</script>
+</body>
+</html>

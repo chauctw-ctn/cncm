@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Lịch sử</title>
+  <link rel="stylesheet" href="/shared/layout.css">
+  <script src="/shared/auth.js"></script>
+  <script src="/shared/layout.js"></script>
+</head>
+
+<body>
+<main class="page-content">
+  <div class="card">
+    <h2>Lịch sử dữ liệu</h2>
+
+    <div class="form-grid">
+      <select id="logger_id">
+        <option value="">Tất cả logger</option>
+      </select>
+
+      <select id="tag_key">
+        <option value="">Tất cả tag</option>
+        <option value="flow">flow</option>
+        <option value="level">level</option>
+        <option value="totalIndex">totalIndex</option>
+        <option value="pH">pH</option>
+        <option value="TDS">TDS</option>
+      </select>
+
+      <input id="from" placeholder="from yyyy-mm-dd hh:mm:ss">
+      <input id="to" placeholder="to yyyy-mm-dd hh:mm:ss">
+    </div>
+
+    <br>
+    <button onclick="loadHistory()">Lọc dữ liệu</button>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Thời gian</th>
+          <th>Logger</th>
+          <th>Nguồn</th>
+          <th>Tag</th>
+          <th>Giá trị</th>
+        </tr>
+      </thead>
+      <tbody id="historyTable"></tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+AppLayout.initLayout("Lịch sử");
+
+async function loadLoggers() {
+  const res = await fetch("/api/logger/readings/map");
+  const json = await res.json();
+
+  if (!json.success) return;
+
+  json.data.forEach(l => {
+    const opt = document.createElement("option");
+    opt.value = l.logger_id;
+    opt.textContent = `${l.name || l.logger_id} (${l.logger_id})`;
+    logger_id.appendChild(opt);
+  });
+}
+
+async function loadHistory() {
+  const params = new URLSearchParams();
+
+  if (logger_id.value) params.set("logger_id", logger_id.value);
+  if (tag_key.value) params.set("tag_key", tag_key.value);
+  if (from.value) params.set("from", from.value);
+  if (to.value) params.set("to", to.value);
+  params.set("limit", "1000");
+
+  const res = await fetch(`/api/logger/history?${params.toString()}`);
+  const json = await res.json();
+
+  if (!json.success) return alert("Lỗi tải lịch sử");
+
+  historyTable.innerHTML = json.data.map(r => `
+    <tr>
+      <td>${r.data_ts}</td>
+      <td>${r.logger_name || r.logger_id}</td>
+      <td>${r.source || ""}</td>
+      <td>${r.tag_name || r.tag_key}</td>
+      <td>${r.value ?? "--"} ${r.unit || ""}</td>
+    </tr>
+  `).join("");
+}
+
+loadLoggers();
+loadHistory();
+</script>
+</body>
+</html>

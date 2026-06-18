@@ -61,7 +61,57 @@ db.serialize(() => {
     CREATE INDEX IF NOT EXISTS idx_logger_readings
     ON logger_readings(logger_id, tag_key, data_ts DESC)
   `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS kpi_configs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      kpi_id TEXT UNIQUE NOT NULL,
+      kpi_type TEXT NOT NULL,       -- kpi-flow | kpi-total
+      name TEXT,
+      tag_key TEXT NOT NULL,        -- flow | totalIndex
+      logger_ids TEXT NOT NULL,     -- JSON array
+      enabled INTEGER DEFAULT 1,
+      created_ts TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_ts TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS tag_thresholds (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      logger_id TEXT NOT NULL,
+      tag_key TEXT NOT NULL,
+      min_value REAL,
+      max_value REAL,
+      warning_enabled INTEGER DEFAULT 1,
+      message TEXT,
+      UNIQUE(logger_id, tag_key)
+    )
+  `);
+
 });
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS app_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT,
+    updated_ts TEXT DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS alert_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    logger_id TEXT NOT NULL,
+    tag_key TEXT NOT NULL,
+    status TEXT NOT NULL,
+    value REAL,
+    message TEXT,
+    sent_ts TEXT DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+
+
 
 db.close(() => {
   console.log("[DB] Init logger tables done");

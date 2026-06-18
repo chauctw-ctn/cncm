@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>KPI / History / Threshold Config</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 20px;
+      color: #1f2937;
+    }
+
+    section {
+      background: white;
+      padding: 16px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    input, select, button {
+      padding: 8px;
+      margin: 4px;
+      box-sizing: border-box;
+    }
+
+    input, select {
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      min-width: 220px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 6px;
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+    }
+
+    button.red { background: #dc2626; }
+    button.green { background: #16a34a; }
+    button.gray { background: #64748b; }
+
+    .checkbox-list {
+      max-height: 240px;
+      overflow: auto;
+      background: #f8fafc;
+      padding: 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+    }
+
+    .checkbox-list label {
+      display: block;
+      margin: 4px 0;
+      font-size: 14px;
+    }
+
+    pre {
+      background: #111827;
+      color: #d1fae5;
+      padding: 12px;
+      border-radius: 8px;
+      overflow: auto;
+      max-height: 420px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background: white;
+    }
+
+    td, th {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 8px;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background: #f8fafc;
+    }
+
+    .hint {
+      color: #64748b;
+      font-size: 13px;
+      margin: 6px 0;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Test KPI / History / Threshold</h2>
+
+<section>
+  <h3>1. Chọn logger cho KPI</h3>
+
+  <button onclick="loadLoggers()">Tải logger</button>
+  <button class="gray" onclick="checkAll(true)">Chọn tất cả</button>
+  <button class="gray" onclick="checkAll(false)">Bỏ chọn</button>
+
+  <div class="hint">Tick các logger cần cộng cho KPI flow hoặc KPI total.</div>
+  <div id="loggerList" class="checkbox-list"></div>
+</section>
+
+<section>
+  <h3>2. Thêm / Sửa / Xoá KPI</h3>
+
+  <input id="kpi_id" placeholder="kpi_id" value="kpi_flow_main">
+  <input id="kpi_name" placeholder="Tên KPI" value="Tổng lưu lượng hiện tại">
+
+  <select id="kpi_type" onchange="onKpiTypeChange()">
+    <option value="kpi-flow">kpi-flow: tổng flow hiện tại</option>
+    <option value="kpi-total">kpi-total: tổng totalIndex ngày/tháng</option>
+  </select>
+
+  <br>
+
+  <button class="green" onclick="saveKpi()">Lưu KPI</button>
+  <button onclick="getKpis()">Danh sách KPI</button>
+  <button onclick="getKpiValue()">Tính KPI</button>
+  <button class="red" onclick="deleteKpi()">Xoá KPI</button>
+</section>
+
+<section>
+  <h3>3. Lọc lịch sử</h3>
+
+  <select id="h_logger_id">
+    <option value="">Tất cả logger</option>
+  </select>
+
+  <select id="h_tag_key">
+    <option value="">Tất cả tag</option>
+    <option value="flow">flow</option>
+    <option value="level">level</option>
+    <option value="totalIndex">totalIndex</option>
+    <option value="pH">pH</option>
+    <option value="TDS">TDS</option>
+    <option value="amino">amino</option>
+    <option value="nitrat">nitrat</option>
+  </select>
+
+  <select id="h_source">
+    <option value="">Tất cả nguồn</option>
+    <option value="mqtt">mqtt</option>
+    <option value="scada">scada</option>
+    <option value="tva">tva</option>
+    <option value="monre">monre</option>
+  </select>
+
+  <br>
+
+  <input id="h_from" type="text" placeholder="Từ thời gian" readonly>
+  <input id="h_to" type="text" placeholder="Đến thời gian" readonly>
+  <input id="h_limit" type="number" value="500">
+
+  <br>
+
+  <button onclick="setLastHour()">1 giờ gần nhất</button>
+  <button onclick="setTodayRange()">Hôm nay</button>
+  <button onclick="setCurrentMonthRange()">Tháng này</button>
+  <button onclick="clearHistoryFilter()">Xoá bộ lọc</button>
+  <button class="green" onclick="getHistory()">Lọc history</button>
+
+  <div id="historyTable"></div>
+</section>
+
+<section>
+  <h3>4. Cài đặt ngưỡng cảnh báo</h3>
+
+  <select id="th_logger_id" onchange="loadThresholdTags()">
+    <option value="">-- Chọn logger --</option>
+  </select>
+
+  <select id="th_tag_key">
+    <option value="">-- Chọn tag --</option>
+  </select>
+
+  <br>
+
+  <input id="th_min" type="number" placeholder="min">
+  <input id="th_max" type="number" placeholder="max">
+  <input id="th_message" placeholder="message" value="Giá trị vượt ngưỡng">
+
+  <select id="th_enabled">
+    <option value="1">Bật cảnh báo</option>
+    <option value="0">Tắt cảnh báo</option>
+  </select>
+
+  <br>
+
+  <button class="green" onclick="saveThreshold()">Lưu ngưỡng</button>
+  <button onclick="getThresholds()">Danh sách ngưỡng</button>
+  <button class="red" onclick="deleteThreshold()">Xoá ngưỡng</button>
+
+  <div id="thresholdTable"></div>
+</section>
+
+<section>
+  <h3>Response</h3>
+  <pre id="output">Chưa có dữ liệu</pre>
+</section>
+
+<script>
+let loggers = [];
+
+function show(data) {
+  document.getElementById("output").textContent = JSON.stringify(data, null, 2);
+}
+
+async function api(url, options = {}) {
+  try {
+    const res = await fetch(url, options);
+    const json = await res.json();
+    show(json);
+    return json;
+  } catch (err) {
+    const json = { success: false, message: err.message };
+    show(json);
+    return json;
+  }
+}
+
+function initDatePickers() {
+  flatpickr("#h_from", {
+    enableTime: true,
+    time_24hr: true,
+    enableSeconds: true,
+    dateFormat: "Y-m-d H:i:S",
+    locale: "vn"
+  });
+
+  flatpickr("#h_to", {
+    enableTime: true,
+    time_24hr: true,
+    enableSeconds: true,
+    dateFormat: "Y-m-d H:i:S",
+    locale: "vn"
+  });
+}
+
+async function loadLoggers() {
+  const json = await api("/api/logger/readings/map");
+  if (!json.success) return;
+
+  loggers = json.data || [];
+
+  renderKpiLoggerCheckboxes();
+  renderLoggerDropdowns();
+}
+
+function renderKpiLoggerCheckboxes() {
+  const box = document.getElementById("loggerList");
+
+  if (!loggers.length) {
+    box.innerHTML = "<i>Chưa có logger</i>";
+    return;
+  }
+
+  box.innerHTML = loggers.map(l => `
+    <label>
+      <input type="checkbox" class="logger-check" value="${escapeHtml(l.logger_id)}">
+      ${escapeHtml(l.name || l.logger_id)}
+      <small>(${escapeHtml(l.logger_id)})</small>
+    </label>
+  `).join("");
+}
+
+function renderLoggerDropdowns() {
+  const historySelect = document.getElementById("h_logger_id");
+  const thresholdSelect = document.getElementById("th_logger_id");
+
+  historySelect.innerHTML = `<option value="">Tất cả logger</option>`;
+  thresholdSelect.innerHTML = `<option value="">-- Chọn logger --</option>`;
+
+  loggers.forEach(logger => {
+    const label = `${logger.name || logger.logger_id} (${logger.logger_id})`;
+
+    const hOption = document.createElement("option");
+    hOption.value = logger.logger_id;
+    hOption.textContent = label;
+    historySelect.appendChild(hOption);
+
+    const thOption = document.createElement("option");
+    thOption.value = logger.logger_id;
+    thOption.textContent = label;
+    thresholdSelect.appendChild(thOption);
+  });
+}
+
+function checkAll(value) {
+  document.querySelectorAll(".logger-check").forEach(cb => {
+    cb.checked = value;
+  });
+}
+
+function checkedLoggerIds() {
+  return Array.from(document.querySelectorAll(".logger-check:checked"))
+    .map(cb => cb.value);
+}
+
+function onKpiTypeChange() {
+  const type = document.getElementById("kpi_type").value;
+  const id = document.getElementById("kpi_id");
+  const name = document.getElementById("kpi_name");
+
+  if (type === "kpi-flow") {
+    id.value = "kpi_flow_main";
+    name.value = "Tổng lưu lượng hiện tại";
+  } else {
+    id.value = "kpi_total_main";
+    name.value = "Tổng sản lượng ngày/tháng";
+  }
+}
+
+async function saveKpi() {
+  const loggerIds = checkedLoggerIds();
+
+  if (!loggerIds.length) {
+    alert("Chưa chọn logger cho KPI");
+    return;
+  }
+
+  const body = {
+    kpi_id: document.getElementById("kpi_id").value.trim(),
+    kpi_type: document.getElementById("kpi_type").value,
+    name: document.getElementById("kpi_name").value.trim(),
+    logger_ids: loggerIds,
+    enabled: 1
+  };
+
+  if (!body.kpi_id) {
+    alert("Chưa nhập kpi_id");
+    return;
+  }
+
+  await api("/api/logger/kpis", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+}
+
+function getKpis() {
+  api("/api/logger/kpis");
+}
+
+function getKpiValue() {
+  const id = document.getElementById("kpi_id").value.trim();
+
+  if (!id) {
+    alert("Chưa nhập kpi_id");
+    return;
+  }
+
+  api(`/api/logger/kpis/${encodeURIComponent(id)}/value`);
+}
+
+function deleteKpi() {
+  const id = document.getElementById("kpi_id").value.trim();
+
+  if (!id) {
+    alert("Chưa nhập kpi_id");
+    return;
+  }
+
+  if (!confirm(`Xoá KPI ${id}?`)) return;
+
+  api(`/api/logger/kpis/${encodeURIComponent(id)}`, {
+    method: "DELETE"
+  });
+}
+
+function getHistory() {
+  const params = new URLSearchParams();
+
+  const loggerId = document.getElementById("h_logger_id").value;
+  const tagKey = document.getElementById("h_tag_key").value;
+  const source = document.getElementById("h_source").value;
+  const from = document.getElementById("h_from").value;
+  const to = document.getElementById("h_to").value;
+  const limit = document.getElementById("h_limit").value;
+
+  if (loggerId) params.set("logger_id", loggerId);
+  if (tagKey) params.set("tag_key", tagKey);
+  if (source) params.set("source", source);
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  if (limit) params.set("limit", limit);
+
+  api(`/api/logger/history?${params.toString()}`).then(renderHistoryTable);
+}
+
+function renderHistoryTable(json) {
+  const box = document.getElementById("historyTable");
+
+  if (!json || !json.success || !Array.isArray(json.data)) {
+    box.innerHTML = "";
+    return;
+  }
+
+  const rows = json.data.slice(0, 200);
+
+  box.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Logger</th>
+          <th>Nguồn</th>
+          <th>Tag</th>
+          <th>Giá trị</th>
+          <th>Đơn vị</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => `
+          <tr>
+            <td>${escapeHtml(r.data_ts || "")}</td>
+            <td>${escapeHtml(r.logger_name || r.logger_id || "")}</td>
+            <td>${escapeHtml(r.source || "")}</td>
+            <td>${escapeHtml(r.tag_name || r.tag_key || "")}</td>
+            <td>${r.value ?? ""}</td>
+            <td>${escapeHtml(r.unit || "")}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+async function loadThresholdTags() {
+  const loggerId = document.getElementById("th_logger_id").value;
+  const tagSelect = document.getElementById("th_tag_key");
+
+  tagSelect.innerHTML = `<option value="">-- Chọn tag --</option>`;
+
+  if (!loggerId) return;
+
+  const json = await api(`/api/logger/tags/${encodeURIComponent(loggerId)}`);
+  if (!json.success) return;
+
+  json.data.forEach(tag => {
+    const option = document.createElement("option");
+    option.value = tag.tag_key;
+    option.textContent = `${tag.tag_name || tag.tag_key} (${tag.tag_key})`;
+    tagSelect.appendChild(option);
+  });
+}
+
+function nullableNumber(value) {
+  if (value === "" || value === null || value === undefined) return null;
+
+  const n = Number(value);
+  return Number.isNaN(n) ? null : n;
+}
+
+function saveThreshold() {
+  const loggerId = document.getElementById("th_logger_id").value;
+  const tagKey = document.getElementById("th_tag_key").value;
+
+  if (!loggerId) {
+    alert("Chưa chọn logger_id");
+    return;
+  }
+
+  if (!tagKey) {
+    alert("Chưa chọn tag_key");
+    return;
+  }
+
+  const body = {
+    logger_id: loggerId,
+    tag_key: tagKey,
+    min_value: nullableNumber(document.getElementById("th_min").value),
+    max_value: nullableNumber(document.getElementById("th_max").value),
+    warning_enabled: Number(document.getElementById("th_enabled").value),
+    message: document.getElementById("th_message").value
+  };
+
+  api("/api/logger/thresholds", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+}
+
+function getThresholds() {
+  api("/api/logger/thresholds").then(renderThresholdTable);
+}
+
+function renderThresholdTable(json) {
+  const box = document.getElementById("thresholdTable");
+
+  if (!json || !json.success || !Array.isArray(json.data)) {
+    box.innerHTML = "";
+    return;
+  }
+
+  box.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Logger</th>
+          <th>Tag</th>
+          <th>Min</th>
+          <th>Max</th>
+          <th>Giá trị</th>
+          <th>Status</th>
+          <th>Message</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${json.data.map(r => `
+          <tr>
+            <td>${escapeHtml(r.logger_name || r.logger_id || "")}</td>
+            <td>${escapeHtml(r.tag_name || r.tag_key || "")}</td>
+            <td>${r.min_value ?? ""}</td>
+            <td>${r.max_value ?? ""}</td>
+            <td>${r.value ?? ""} ${escapeHtml(r.unit || "")}</td>
+            <td>${escapeHtml(r.status || "")}</td>
+            <td>${escapeHtml(r.message || "")}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+function deleteThreshold() {
+  const loggerId = document.getElementById("th_logger_id").value;
+  const tagKey = document.getElementById("th_tag_key").value;
+
+  if (!loggerId || !tagKey) {
+    alert("Chưa chọn logger_id hoặc tag_key");
+    return;
+  }
+
+  if (!confirm(`Xoá ngưỡng ${loggerId}/${tagKey}?`)) return;
+
+  api(`/api/logger/thresholds/${encodeURIComponent(loggerId)}/${encodeURIComponent(tagKey)}`, {
+    method: "DELETE"
+  });
+}
+
+function setLastHour() {
+  const now = new Date();
+  const from = new Date(now.getTime() - 3600000);
+
+  document.getElementById("h_from").value = formatDateTime(from);
+  document.getElementById("h_to").value = formatDateTime(now);
+}
+
+function setTodayRange() {
+  const now = new Date();
+  const d = formatDate(now);
+
+  document.getElementById("h_from").value = `${d} 00:00:00`;
+  document.getElementById("h_to").value = `${d} 23:59:59`;
+}
+
+function setCurrentMonthRange() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const start = new Date(y, m, 1);
+  const end = new Date(y, m + 1, 0);
+
+  document.getElementById("h_from").value = `${formatDate(start)} 00:00:00`;
+  document.getElementById("h_to").value = `${formatDate(end)} 23:59:59`;
+}
+
+function clearHistoryFilter() {
+  document.getElementById("h_logger_id").value = "";
+  document.getElementById("h_tag_key").value = "";
+  document.getElementById("h_source").value = "";
+  document.getElementById("h_from").value = "";
+  document.getElementById("h_to").value = "";
+  document.getElementById("h_limit").value = "500";
+  document.getElementById("historyTable").innerHTML = "";
+}
+
+function formatDate(date) {
+  const pad = v => String(v).padStart(2, "0");
+
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate())
+  ].join("-");
+}
+
+function formatDateTime(date) {
+  const pad = v => String(v).padStart(2, "0");
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+initDatePickers();
+loadLoggers();
+setTodayRange();
+</script>
+
+</body>
+</html>

@@ -12,6 +12,8 @@ const monreClient = require("./src/sources/monre/client");
 
 const loggerApi = require("./src/api/logger");
 
+const { startAlertChecker } = require("./src/services/alert-checker");
+
 const app = express();
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -154,7 +156,8 @@ function startServices() {
     mqtt: startMqttService(),
     scada: startScadaService(),
     tva: startTvaService(),
-    monre: startMonreService()
+    monre: startMonreService(),
+    alertChecker: startAlertChecker(Number(process.env.ALERT_CHECK_INTERVAL_MS) || 60000)
   };
 
   console.log("[SERVICES] Started");

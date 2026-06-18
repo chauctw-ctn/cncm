@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Cài đặt</title>
+
+  <link rel="stylesheet" href="/shared/layout.css">
+
+  <script src="/shared/auth.js"></script>
+  <script src="/shared/layout.js"></script>
+
+  <style>
+    .setting-form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
+    .setting-form-grid label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .setting-form-grid input,
+    .setting-form-grid select {
+      width: 100%;
+    }
+
+    pre {
+      background: #111827;
+      color: #d1fae5;
+      padding: 12px;
+      border-radius: 8px;
+      overflow: auto;
+      max-height: 420px;
+    }
+
+    .help-box {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+    }
+
+    .status-ok {
+      color: #16a34a;
+      font-weight: bold;
+    }
+
+    .status-error {
+      color: #dc2626;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+<main class="page-content">
+  <div class="card">
+    <h2>Cài đặt hệ thống</h2>
+
+    <button onclick="location.href='/logger-config.html'">
+      Cấu hình Logger / Tags
+    </button>
+
+    <button onclick="location.href='/kpi-config.html'">
+      Cấu hình KPI / History / Threshold
+    </button>
+  </div>
+
+  <div class="card" id="telegramCard">
+    <h3>Cấu hình Telegram cảnh báo</h3>
+
+    <div class="setting-form-grid">
+      <div>
+        <label>Bật/Tắt Telegram</label>
+        <select id="telegram_enabled">
+          <option value="1">Bật Telegram</option>
+          <option value="0">Tắt Telegram</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Cooldown phút</label>
+        <input
+          id="telegram_cooldown_minutes"
+          type="number"
+          placeholder="Cooldown phút"
+          value="10"
+        >
+      </div>
+
+      <div class="full-width">
+        <label>Telegram Bot Token</label>
+        <input
+          id="telegram_bot_token"
+          placeholder="Ví dụ: 123456789:ABCDEF..."
+        >
+      </div>
+
+      <div class="full-width">
+        <label>Telegram Chat ID</label>
+        <input
+          id="telegram_chat_id"
+          placeholder="Ví dụ: -1001234567890 hoặc 123456789"
+        >
+      </div>
+    </div>
+
+    <br>
+
+    <button onclick="saveTelegramSettings()">Lưu Telegram</button>
+    <button onclick="testTelegram()">Gửi test Telegram</button>
+    <button class="gray" onclick="loadTelegramSettings()">Tải cấu hình</button>
+
+    <div class="help-box">
+      <h4>Hướng dẫn lấy Telegram Bot Token / Chat ID</h4>
+      <ol>
+        <li>Vào Telegram, tìm <b>@BotFather</b>.</li>
+        <li>Tạo bot mới bằng lệnh <b>/newbot</b>.</li>
+        <li>Copy <b>Bot Token</b> đưa vào ô Telegram Bot Token.</li>
+        <li>Nhắn một tin bất kỳ vào bot vừa tạo.</li>
+        <li>Mở trình duyệt với link:</li>
+      </ol>
+
+      <pre>https://api.telegram.org/botBOT_TOKEN/getUpdates</pre>
+
+      <p>Tìm trường:</p>
+
+      <pre>chat.id</pre>
+
+      <p>Đó là Chat ID cần nhập.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Trạng thái hệ thống</h3>
+
+    <button onclick="checkHealth()">Kiểm tra server</button>
+    <button onclick="loadThresholds()">Kiểm tra ngưỡng cảnh báo</button>
+
+    <div id="healthStatus"></div>
+  </div>
+
+  <div class="card">
+    <h3>Response</h3>
+    <pre id="output">Chưa kiểm tra</pre>
+  </div>
+</main>
+
+<script>
+AppLayout.initLayout("Cài đặt");
+
+const currentUser = Auth.getCurrentUser();
+
+const isAdmin =
+  currentUser &&
+  currentUser.role === "admin";
+
+if (!isAdmin) {
+  telegramCard.innerHTML = `
+    <h3>Cấu hình Telegram cảnh báo</h3>
+    <p>Bạn không có quyền sửa cấu hình Telegram.</p>
+  `;
+}
+
+function show(data) {
+  output.textContent = JSON.stringify(data, null, 2);
+}
+
+async function api(url, options = {}) {
+  try {
+    const res = await fetch(url, options);
+    const json = await res.json();
+    show(json);
+    return json;
+  } catch (err) {
+    const json = {
+      success: false,
+      message: err.message
+    };
+    show(json);
+    return json;
+  }
+}
+
+async function loadTelegramSettings() {
+  if (!isAdmin) return;
+
+  const json = await api("/api/logger/settings");
+
+  if (!json.success) return;
+
+  const data = json.data || {};
+
+  telegram_enabled.value = data.telegram_enabled || "0";
+  telegram_bot_token.value = data.telegram_bot_token || "";
+  telegram_chat_id.value = data.telegram_chat_id || "";
+  telegram_cooldown_minutes.value = data.telegram_cooldown_minutes || "10";
+}
+
+async function saveTelegramSettings() {
+  if (!isAdmin) {
+    alert("Chỉ Admin mới được sửa cấu hình Telegram");
+    return;
+  }
+
+  const body = {
+    telegram_enabled: telegram_enabled.value,
+    telegram_bot_token: telegram_bot_token.value.trim(),
+    telegram_chat_id: telegram_chat_id.value.trim(),
+    telegram_cooldown_minutes: telegram_cooldown_minutes.value || "10"
+  };
+
+  await api("/api/logger/settings", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+}
+
+async function testTelegram() {
+  if (!isAdmin) {
+    alert("Chỉ Admin mới được test Telegram");
+    return;
+  }
+
+  await api("/api/logger/settings/telegram/test", {
+    method: "POST"
+  });
+}
+
+async function checkHealth() {
+  const json = await api("/api/health");
+
+  if (json.success) {
+    healthStatus.innerHTML = `<p class="status-ok">API OK</p>`;
+  } else {
+    healthStatus.innerHTML = `<p class="status-error">API lỗi</p>`;
+  }
+}
+
+async function loadThresholds() {
+  await api("/api/logger/thresholds");
+}
+
+loadTelegramSettings();
+</script>
+</body>
+</html>
