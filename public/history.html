@@ -16,82 +16,172 @@
   <style>
     .filter-grid {
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(6, 1fr);
       gap: 10px;
       align-items: end;
     }
 
     .filter-actions {
       margin-top: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .multi-select {
+      position: relative;
+    }
+
+    .multi-select-btn {
+      width: 100%;
+      padding: 9px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: white;
+      color: #1f2937;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .multi-select-list {
+      display: none;
+      position: absolute;
+      z-index: 1000;
+      top: 42px;
+      left: 0;
+      min-width: 280px;
+      max-height: 280px;
+      overflow: auto;
+      background: white;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+
+    .multi-select.active .multi-select-list {
+      display: block;
+    }
+
+    .multi-select-list label {
+      display: block;
+      padding: 5px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .multi-select-list label:hover {
+      background: #f1f5f9;
+    }
+
+    .multi-select-list input {
+      width: auto;
+      margin-right: 6px;
     }
 
     .history-table-wrap {
-      overflow: auto;
-      max-height: calc(100vh - 310px);
+      overflow-x: auto;
+      overflow-y: visible;
       border: 1px solid #e5e7eb;
       border-radius: 10px;
+      background: white;
     }
 
-    .history-table {
-      min-width: 1100px;
+    .pivot-table {
+      border-collapse: collapse;
+      min-width: 1200px;
+      width: max-content;
     }
 
-    .history-table thead th {
-      position: sticky;
-      top: 0;
-      z-index: 2;
-      background: #f8fafc;
-      border-bottom: 2px solid #cbd5e1;
+    .pivot-table th,
+    .pivot-table td {
+      border: 1px solid #e5e7eb;
+      padding: 8px;
       text-align: center;
-    }
-
-    .logger-cell {
-      font-weight: bold;
-      color: #0f172a;
-    }
-
-    .tag-cell {
-      color: #475569;
-      margin-top: 4px;
+      white-space: nowrap;
       font-size: 13px;
     }
 
-    .threshold-box {
-      display: grid;
-      grid-template-columns: 1fr 1fr auto;
-      gap: 6px;
-      align-items: center;
-      min-width: 270px;
+    .pivot-table thead th {
+      background: #f8fafc;
     }
 
-    .threshold-box input {
-      min-width: 80px;
-      padding: 6px;
+    .time-col {
+      position: sticky;
+      left: 0;
+      background: white;
+      z-index: 3;
+      font-weight: bold;
+      min-width: 170px;
+      text-align: left !important;
     }
 
-    .threshold-box button {
-      padding: 6px 10px;
+    .pivot-table thead .time-col {
+      z-index: 8;
+      background: #f8fafc;
     }
 
-    .status-ok {
-      color: #16a34a;
+    .pivot-table tbody tr:hover td {
+      background: #fff7ed !important;
+    }
+
+    .logger-head {
+      color: #0f172a;
       font-weight: bold;
     }
 
-    .status-high,
-    .status-low {
-      color: #dc2626;
-      font-weight: bold;
+    .tag-head {
+      color: #334155;
     }
 
-    .small-muted {
+    .group-0 { background: #dbeafe !important; }
+    .group-1 { background: #dcfce7 !important; }
+    .group-2 { background: #fef3c7 !important; }
+    .group-3 { background: #fce7f3 !important; }
+    .group-4 { background: #ede9fe !important; }
+    .group-5 { background: #ccfbf1 !important; }
+
+    .cell-group-0 { background: #eff6ff; }
+    .cell-group-1 { background: #f0fdf4; }
+    .cell-group-2 { background: #fffbeb; }
+    .cell-group-3 { background: #fdf2f8; }
+    .cell-group-4 { background: #f5f3ff; }
+    .cell-group-5 { background: #f0fdfa; }
+
+    .empty-cell {
+      color: #94a3b8;
+    }
+
+    .value-cell {
+      font-weight: 600;
+    }
+
+    .summary {
       color: #64748b;
-      font-size: 12px;
+      font-size: 13px;
+      margin-bottom: 8px;
     }
 
-    @media (max-width: 1200px) {
+    .pagination {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .pagination button {
+      min-width: 80px;
+    }
+
+    .pagination select {
+      width: 90px;
+    }
+
+    @media (max-width: 1400px) {
       .filter-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
       }
     }
   </style>
@@ -101,49 +191,76 @@
 <main class="page-content">
 
   <div class="card">
-    <h2>Lịch sử dữ liệu</h2>
+    <h2>Lịch sử dữ liệu theo chu kỳ</h2>
 
     <div class="filter-grid">
       <div>
-        <label>Logger ID</label>
-        <select id="logger_id">
-          <option value="">Tất cả logger</option>
-        </select>
-      </div>
-
-      <div>
-        <label>Tag</label>
-        <select id="tag_key">
-          <option value="">Tất cả tag</option>
-          <option value="flow">flow</option>
-          <option value="level">level</option>
-          <option value="totalIndex">totalIndex</option>
-          <option value="pH">pH</option>
-          <option value="TDS">TDS</option>
-          <option value="amino">amino</option>
-          <option value="nitrat">nitrat</option>
-        </select>
-      </div>
-
-      <div>
-        <label>Nguồn</label>
-        <select id="source">
-          <option value="">Tất cả nguồn</option>
-          <option value="mqtt">mqtt</option>
-          <option value="scada">scada</option>
-          <option value="tva">tva</option>
-          <option value="monre">monre</option>
-        </select>
-      </div>
-
-      <div>
         <label>Từ thời gian</label>
-        <input id="from" type="text" readonly placeholder="Chọn thời gian bắt đầu">
+        <input id="from" type="text" readonly>
       </div>
 
       <div>
         <label>Đến thời gian</label>
-        <input id="to" type="text" readonly placeholder="Chọn thời gian kết thúc">
+        <input id="to" type="text" readonly>
+      </div>
+
+      <div>
+        <label>Chu kỳ</label>
+        <select id="interval">
+          <option value="5m">5 phút</option>
+          <option value="10m">10 phút</option>
+          <option value="15m">15 phút</option>
+          <option value="30m">30 phút</option>
+          <option value="1h">1 giờ</option>
+          <option value="2h">2 giờ</option>
+          <option value="3h">3 giờ</option>
+          <option value="6h">6 giờ</option>
+          <option value="12h">12 giờ</option>
+          <option value="1d">1 ngày</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Logger</label>
+        <div class="multi-select" id="loggerDropdown">
+          <button type="button" class="multi-select-btn" onclick="toggleDropdown('loggerDropdown')">
+            Tất cả Logger
+          </button>
+          <div id="loggerCheckList" class="multi-select-list"></div>
+        </div>
+      </div>
+
+      <div>
+        <label>Tag</label>
+        <div class="multi-select" id="tagDropdown">
+          <button type="button" class="multi-select-btn" onclick="toggleDropdown('tagDropdown')">
+            Tất cả Tag
+          </button>
+          <div id="tagCheckList" class="multi-select-list">
+            <label><input type="checkbox" class="tag-check" value="flow"> flow</label>
+            <label><input type="checkbox" class="tag-check" value="level"> level</label>
+            <label><input type="checkbox" class="tag-check" value="totalIndex"> totalIndex</label>
+            <label><input type="checkbox" class="tag-check" value="pH"> pH</label>
+            <label><input type="checkbox" class="tag-check" value="TDS"> TDS</label>
+            <label><input type="checkbox" class="tag-check" value="amino"> amino</label>
+            <label><input type="checkbox" class="tag-check" value="nitrat"> nitrat</label>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label>Nguồn</label>
+        <div class="multi-select" id="sourceDropdown">
+          <button type="button" class="multi-select-btn" onclick="toggleDropdown('sourceDropdown')">
+            Tất cả Nguồn
+          </button>
+          <div class="multi-select-list">
+            <label><input type="checkbox" class="source-check" value="mqtt"> mqtt</label>
+            <label><input type="checkbox" class="source-check" value="scada"> scada</label>
+            <label><input type="checkbox" class="source-check" value="tva"> tva</label>
+            <label><input type="checkbox" class="source-check" value="monre"> monre</label>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -151,35 +268,50 @@
       <button onclick="setLastHour()">1 giờ gần nhất</button>
       <button onclick="setTodayRange()">Hôm nay</button>
       <button onclick="setCurrentMonthRange()">Tháng này</button>
-      <button class="gray" onclick="clearFilter()">Xoá lọc</button>
-      <button onclick="loadHistory()">Lọc dữ liệu</button>
+      <button class="gray" onclick="clearFilters()">Xoá lọc</button>
+      <button onclick="loadHistoryTable()">Tải bảng</button>
 
-      <input id="limit" type="number" value="500" style="width:120px" title="Limit">
+      <label>Raw limit</label>
+      <input id="limit" type="number" value="50000" style="width:120px">
     </div>
   </div>
 
   <div class="card">
-    <h3>Kết quả</h3>
-    <div id="summary" class="small-muted">Chưa tải dữ liệu</div>
+    <h3>Bảng dữ liệu</h3>
+    <div id="summary" class="summary">Chưa tải dữ liệu</div>
 
     <div class="history-table-wrap">
-      <table class="history-table">
-        <thead>
+      <table class="pivot-table">
+        <thead id="pivotHead">
           <tr>
-            <th style="width:170px">Thời gian</th>
-            <th style="width:260px">Logger ID / Các tag</th>
-            <th style="width:130px">Giá trị tag</th>
-            <th style="width:100px">Đơn vị</th>
-            <th style="width:100px">Nguồn</th>
-            <th style="width:330px">Ngưỡng cảnh báo: Min / Max</th>
+            <th>Thời gian</th>
           </tr>
         </thead>
-        <tbody id="historyTable">
+        <tbody id="pivotBody">
           <tr>
-            <td colspan="6"><i>Chưa có dữ liệu</i></td>
+            <td>Chưa có dữ liệu</td>
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="pagination">
+      <button onclick="firstPage()">Đầu</button>
+      <button onclick="prevPage()">Trước</button>
+
+      <span id="pageInfo">Trang 0/0</span>
+
+      <button onclick="nextPage()">Sau</button>
+      <button onclick="lastPage()">Cuối</button>
+
+      <label>Số hàng/trang</label>
+      <select id="pageSize" onchange="changePageSize()">
+        <option value="10">10</option>
+        <option value="15" selected>15</option>
+        <option value="20">20</option>
+        <option value="30">30</option>
+        <option value="50">50</option>
+      </select>
     </div>
   </div>
 
@@ -188,7 +320,10 @@
 <script>
 AppLayout.initLayout("Lịch sử");
 
-let thresholdMap = {};
+let loggerList = [];
+let pivotColumns = [];
+let pivotRows = [];
+let currentPage = 1;
 
 function initDatePickers() {
   flatpickr("#from", {
@@ -208,8 +343,24 @@ function initDatePickers() {
   });
 }
 
-async function api(url, options = {}) {
-  const res = await fetch(url, options);
+function toggleDropdown(id) {
+  document.querySelectorAll(".multi-select").forEach(el => {
+    if (el.id !== id) el.classList.remove("active");
+  });
+
+  document.getElementById(id).classList.toggle("active");
+}
+
+document.addEventListener("click", e => {
+  if (!e.target.closest(".multi-select")) {
+    document.querySelectorAll(".multi-select").forEach(el => {
+      el.classList.remove("active");
+    });
+  }
+});
+
+async function api(url) {
+  const res = await fetch(url);
   return res.json();
 }
 
@@ -218,179 +369,205 @@ async function loadLoggers() {
 
   if (!json.success) return;
 
-  json.data.forEach(l => {
-    const opt = document.createElement("option");
-    opt.value = l.logger_id;
-    opt.textContent = `${l.name || l.logger_id} (${l.logger_id})`;
-    logger_id.appendChild(opt);
-  });
+  loggerList = json.data || [];
+
+  loggerCheckList.innerHTML = loggerList.map(logger => `
+    <label>
+      <input type="checkbox" class="logger-check" value="${escapeHtml(logger.logger_id)}">
+      ${escapeHtml(logger.name || logger.logger_id)}
+      <small>(${escapeHtml(logger.logger_id)})</small>
+    </label>
+  `).join("");
+
+  updateDropdownLabels();
 }
 
-async function loadThresholds() {
-  const json = await api("/api/logger/thresholds");
+function updateDropdownLabels() {
+  const loggerCount = getCheckedLoggers().length;
+  const tagCount = getCheckedTags().length;
+  const sourceCount = getCheckedSources().length;
 
-  thresholdMap = {};
+  document.querySelector("#loggerDropdown .multi-select-btn").textContent =
+    loggerCount ? `Logger đã chọn: ${loggerCount}` : "Tất cả Logger";
 
-  if (!json.success || !Array.isArray(json.data)) return;
+  document.querySelector("#tagDropdown .multi-select-btn").textContent =
+    tagCount ? `Tag đã chọn: ${tagCount}` : "Tất cả Tag";
 
-  json.data.forEach(item => {
-    thresholdMap[`${item.logger_id}__${item.tag_key}`] = item;
-  });
+  document.querySelector("#sourceDropdown .multi-select-btn").textContent =
+    sourceCount ? `Nguồn đã chọn: ${sourceCount}` : "Tất cả Nguồn";
 }
 
-function getThreshold(loggerId, tagKey) {
-  return thresholdMap[`${loggerId}__${tagKey}`] || {};
-}
-
-function getStatus(row, threshold) {
-  if (!threshold || threshold.warning_enabled === 0) return "OK";
-
-  const value = Number(row.value);
-
-  if (threshold.min_value !== null && threshold.min_value !== undefined && value < Number(threshold.min_value)) {
-    return "LOW";
+document.addEventListener("change", e => {
+  if (
+    e.target.classList.contains("logger-check") ||
+    e.target.classList.contains("tag-check") ||
+    e.target.classList.contains("source-check")
+  ) {
+    updateDropdownLabels();
   }
+});
 
-  if (threshold.max_value !== null && threshold.max_value !== undefined && value > Number(threshold.max_value)) {
-    return "HIGH";
-  }
-
-  return "OK";
+function getCheckedLoggers() {
+  return Array.from(document.querySelectorAll(".logger-check:checked"))
+    .map(cb => cb.value);
 }
 
-async function loadHistory() {
-  await loadThresholds();
+function getCheckedTags() {
+  return Array.from(document.querySelectorAll(".tag-check:checked"))
+    .map(cb => cb.value);
+}
 
+function getCheckedSources() {
+  return Array.from(document.querySelectorAll(".source-check:checked"))
+    .map(cb => cb.value);
+}
+
+async function loadHistoryTable() {
   const params = new URLSearchParams();
 
-  if (logger_id.value) params.set("logger_id", logger_id.value);
-  if (tag_key.value) params.set("tag_key", tag_key.value);
-  if (source.value) params.set("source", source.value);
   if (from.value) params.set("from", from.value);
   if (to.value) params.set("to", to.value);
+  if (interval.value) params.set("interval", interval.value);
   if (limit.value) params.set("limit", limit.value);
 
-  const json = await api(`/api/logger/history?${params.toString()}`);
+  const loggers = getCheckedLoggers();
+  const tags = getCheckedTags();
+  const sources = getCheckedSources();
+
+  if (loggers.length) params.set("logger_ids", loggers.join(","));
+  if (tags.length) params.set("tag_keys", tags.join(","));
+  if (sources.length) params.set("source", sources.join(","));
+
+  const json = await api(`/api/logger/history/table?${params.toString()}`);
 
   if (!json.success) {
-    historyTable.innerHTML = `
-      <tr>
-        <td colspan="6">Lỗi tải dữ liệu</td>
-      </tr>
-    `;
+    summary.textContent = json.message || "Lỗi tải dữ liệu";
+    pivotHead.innerHTML = "<tr><th>Lỗi</th></tr>";
+    pivotBody.innerHTML = "<tr><td>Lỗi tải dữ liệu</td></tr>";
     return;
   }
 
-  summary.textContent = `Tổng dòng: ${json.total || json.data.length}`;
+  pivotColumns = json.columns || [];
+  pivotRows = json.rows || [];
+  currentPage = 1;
 
-  renderHistory(json.data || []);
+  summary.textContent =
+    `Dòng hiển thị: ${json.total_rows || 0} | Dòng raw: ${json.total_raw_rows || 0} | Chu kỳ: ${json.filters?.interval || ""} | Mới nhất ở trên`;
+
+  renderHeader(pivotColumns);
+  renderCurrentPage();
 }
 
-function renderHistory(rows) {
+function renderHeader(columns) {
+  let row1 = `
+    <tr>
+      <th class="time-col" rowspan="2">Thời gian</th>
+  `;
+
+  let row2 = `<tr>`;
+
+  columns.forEach((col, index) => {
+    const groupClass = `group-${index % 6}`;
+
+    row1 += `
+      <th class="logger-head ${groupClass}" colspan="${col.tags.length}">
+        ${escapeHtml(col.logger_name || col.logger_id)}
+        <br>
+        <small>${escapeHtml(col.logger_id)}</small>
+      </th>
+    `;
+
+    col.tags.forEach(tag => {
+      row2 += `
+        <th class="tag-head ${groupClass}">
+          ${escapeHtml(tag.tag_name || tag.tag_key)}
+          <br>
+          <small>${escapeHtml(tag.unit || "")}</small>
+        </th>
+      `;
+    });
+  });
+
+  row1 += `</tr>`;
+  row2 += `</tr>`;
+
+  pivotHead.innerHTML = row1 + row2;
+}
+
+function renderCurrentPage() {
+  const size = Number(pageSize.value);
+  const totalPages = Math.max(1, Math.ceil(pivotRows.length / size));
+
+  if (currentPage > totalPages) currentPage = totalPages;
+  if (currentPage < 1) currentPage = 1;
+
+  const start = (currentPage - 1) * size;
+  const rows = pivotRows.slice(start, start + size);
+
+  renderRows(pivotColumns, rows);
+
+  pageInfo.textContent = `Trang ${currentPage}/${totalPages} - Tổng ${pivotRows.length} hàng`;
+}
+
+function renderRows(columns, rows) {
   if (!rows.length) {
-    historyTable.innerHTML = `
+    pivotBody.innerHTML = `
       <tr>
-        <td colspan="6"><i>Không có dữ liệu</i></td>
+        <td class="time-col">Không có dữ liệu</td>
       </tr>
     `;
     return;
   }
 
-  historyTable.innerHTML = rows.map(row => {
-    const threshold = getThreshold(row.logger_id, row.tag_key);
-    const status = getStatus(row, threshold);
-    const safeKey = makeRowKey(row.logger_id, row.tag_key);
-
-    return `
+  pivotBody.innerHTML = rows.map(row => {
+    let html = `
       <tr>
-        <td>
-          ${escapeHtml(row.data_ts || "")}
-        </td>
-
-        <td>
-          <div class="logger-cell">
-            ${escapeHtml(row.logger_name || row.logger_id || "")}
-          </div>
-          <div class="small-muted">
-            ${escapeHtml(row.logger_id || "")}
-          </div>
-          <div class="tag-cell">
-            Tag: <b>${escapeHtml(row.tag_name || row.tag_key || "")}</b>
-            <span class="small-muted">(${escapeHtml(row.tag_key || "")})</span>
-          </div>
-        </td>
-
-        <td>
-          <b>${row.value ?? "--"}</b>
-          <div class="${status === "OK" ? "status-ok" : status === "HIGH" ? "status-high" : "status-low"}">
-            ${status}
-          </div>
-        </td>
-
-        <td>
-          ${escapeHtml(row.unit || "")}
-        </td>
-
-        <td>
-          ${escapeHtml(row.source || "")}
-        </td>
-
-        <td>
-          <div class="threshold-box">
-            <input
-              id="min_${safeKey}"
-              type="number"
-              placeholder="Min"
-              value="${threshold.min_value ?? ""}"
-            >
-
-            <input
-              id="max_${safeKey}"
-              type="number"
-              placeholder="Max"
-              value="${threshold.max_value ?? ""}"
-            >
-
-            <button onclick="saveThreshold('${escapeJs(row.logger_id)}','${escapeJs(row.tag_key)}','${safeKey}')">
-              Lưu
-            </button>
-          </div>
-          <div class="small-muted">
-            ${escapeHtml(threshold.message || "")}
-          </div>
-        </td>
-      </tr>
+        <td class="time-col">${escapeHtml(row.ts || "")}</td>
     `;
+
+    columns.forEach((col, index) => {
+      const cellGroup = `cell-group-${index % 6}`;
+
+      col.tags.forEach(tag => {
+        const cell = row[col.logger_id]?.[tag.tag_key];
+
+        html += `
+          <td class="${cell ? "value-cell" : "empty-cell"} ${cellGroup}">
+            ${cell ? formatNumber(cell.value) : "--"}
+          </td>
+        `;
+      });
+    });
+
+    html += `</tr>`;
+    return html;
   }).join("");
 }
 
-async function saveThreshold(loggerId, tagKey, safeKey) {
-  const minEl = document.getElementById(`min_${safeKey}`);
-  const maxEl = document.getElementById(`max_${safeKey}`);
+function firstPage() {
+  currentPage = 1;
+  renderCurrentPage();
+}
 
-  const body = {
-    logger_id: loggerId,
-    tag_key: tagKey,
-    min_value: nullableNumber(minEl.value),
-    max_value: nullableNumber(maxEl.value),
-    warning_enabled: 1,
-    message: `Cảnh báo ${loggerId}/${tagKey}`
-  };
+function prevPage() {
+  currentPage -= 1;
+  renderCurrentPage();
+}
 
-  const json = await api("/api/logger/thresholds", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(body)
-  });
+function nextPage() {
+  currentPage += 1;
+  renderCurrentPage();
+}
 
-  if (!json.success) {
-    alert(json.message || "Lỗi lưu ngưỡng");
-    return;
-  }
+function lastPage() {
+  const size = Number(pageSize.value);
+  currentPage = Math.max(1, Math.ceil(pivotRows.length / size));
+  renderCurrentPage();
+}
 
-  await loadHistory();
+function changePageSize() {
+  currentPage = 1;
+  renderCurrentPage();
 }
 
 function setLastHour() {
@@ -420,30 +597,34 @@ function setCurrentMonthRange() {
   to.value = `${formatDate(end)} 23:59:59`;
 }
 
-function clearFilter() {
-  logger_id.value = "";
-  tag_key.value = "";
-  source.value = "";
+function clearFilters() {
   from.value = "";
   to.value = "";
-  limit.value = "500";
-  historyTable.innerHTML = `
-    <tr>
-      <td colspan="6"><i>Chưa có dữ liệu</i></td>
-    </tr>
-  `;
-  summary.textContent = "Đã xoá bộ lọc";
+  interval.value = "5m";
+  limit.value = "50000";
+
+  document.querySelectorAll(".logger-check").forEach(cb => cb.checked = false);
+  document.querySelectorAll(".tag-check").forEach(cb => cb.checked = false);
+  document.querySelectorAll(".source-check").forEach(cb => cb.checked = false);
+
+  updateDropdownLabels();
 }
 
-function nullableNumber(value) {
-  if (value === "" || value === null || value === undefined) return null;
+function formatNumber(value) {
+  if (value === null || value === undefined || value === "") return "--";
 
-  const num = Number(value);
-  return Number.isNaN(num) ? null : num;
+  const n = Number(value);
+
+  if (Number.isNaN(n)) return value;
+
+  return new Intl.NumberFormat("vi-VN", {
+    maximumFractionDigits: 3
+  }).format(n);
 }
 
 function formatDate(date) {
   const pad = v => String(v).padStart(2, "0");
+
   return [
     date.getFullYear(),
     pad(date.getMonth() + 1),
@@ -453,11 +634,8 @@ function formatDate(date) {
 
 function formatDateTime(date) {
   const pad = v => String(v).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-}
 
-function makeRowKey(loggerId, tagKey) {
-  return String(`${loggerId}_${tagKey}`).replace(/[^a-zA-Z0-9_-]/g, "_");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
 function escapeHtml(value) {
@@ -469,16 +647,13 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-function escapeJs(value) {
-  return String(value)
-    .replaceAll("\\", "\\\\")
-    .replaceAll("'", "\\'");
-}
-
 initDatePickers();
-loadLoggers();
 setTodayRange();
-loadHistory();
+
+loadLoggers().then(() => {
+  updateDropdownLabels();
+  loadHistoryTable();
+});
 </script>
 </body>
 </html>

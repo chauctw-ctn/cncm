@@ -41,3 +41,13 @@ Y!4Kr#8Wp$6Hv@Nc
 6. Chất lượng nước: 
 cln@canthowassco.vn
 gP@3Lm&9Qx!7Ts#D
+
+
+
+// Cấu hình Database PostgreSQL
+    database: {
+        url: process.env.DATABASE_URL || 'postgresql://postgres.llehbswibzhtsqgdulux:CR0kEeWlb8vemvuz@aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres',
+        ssl: {
+            rejectUnauthorized: false
+        },
+        options: '-c TimeZone=Asia/Ho_Chi_Minh',
