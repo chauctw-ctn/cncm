@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Cài đặt</title>
+  <title>Settings</title>
 
   <link rel="stylesheet" href="/shared/layout.css">
 
@@ -10,7 +10,7 @@
   <script src="/shared/layout.js"></script>
 
   <style>
-    .setting-form-grid {
+    .setting-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 12px;
@@ -20,15 +20,10 @@
       grid-column: 1 / -1;
     }
 
-    .setting-form-grid label {
+    label {
       display: block;
       font-weight: bold;
       margin-bottom: 6px;
-    }
-
-    .setting-form-grid input,
-    .setting-form-grid select {
-      width: 100%;
     }
 
     pre {
@@ -62,8 +57,9 @@
 
 <body>
 <main class="page-content">
+
   <div class="card">
-    <h2>Cài đặt hệ thống</h2>
+    <h2>Settings</h2>
 
     <button onclick="location.href='/logger-config.html'">
       Cấu hình Logger / Tags
@@ -74,10 +70,46 @@
     </button>
   </div>
 
+  <div class="card" id="userManageCard">
+    <h3>Quản lý người dùng</h3>
+
+    <div class="form-grid">
+      <input id="username" placeholder="Username">
+      <input id="password" placeholder="Password">
+      <input id="fullname" placeholder="Họ tên">
+
+      <select id="role">
+        <option value="admin">Admin</option>
+        <option value="user">User</option>
+      </select>
+    </div>
+
+    <br>
+
+    <button onclick="saveUser()">Lưu User</button>
+    <button class="gray" onclick="clearUserForm()">Làm mới</button>
+
+    <br><br>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Họ tên</th>
+          <th>Role</th>
+          <th>Trạng thái</th>
+          <th>Thao tác</th>
+        </tr>
+      </thead>
+
+      <tbody id="userTable"></tbody>
+    </table>
+  </div>
+
   <div class="card" id="telegramCard">
     <h3>Cấu hình Telegram cảnh báo</h3>
 
-    <div class="setting-form-grid">
+    <div class="setting-grid">
       <div>
         <label>Bật/Tắt Telegram</label>
         <select id="telegram_enabled">
@@ -134,8 +166,6 @@
       <p>Tìm trường:</p>
 
       <pre>chat.id</pre>
-
-      <p>Đó là Chat ID cần nhập.</p>
     </div>
   </div>
 
@@ -152,10 +182,11 @@
     <h3>Response</h3>
     <pre id="output">Chưa kiểm tra</pre>
   </div>
+
 </main>
 
 <script>
-AppLayout.initLayout("Cài đặt");
+AppLayout.initLayout("Settings");
 
 const currentUser = Auth.getCurrentUser();
 
@@ -164,6 +195,11 @@ const isAdmin =
   currentUser.role === "admin";
 
 if (!isAdmin) {
+  userManageCard.innerHTML = `
+    <h3>Quản lý người dùng</h3>
+    <p>Bạn không có quyền quản lý người dùng.</p>
+  `;
+
   telegramCard.innerHTML = `
     <h3>Cấu hình Telegram cảnh báo</h3>
     <p>Bạn không có quyền sửa cấu hình Telegram.</p>
@@ -189,6 +225,135 @@ async function api(url, options = {}) {
     return json;
   }
 }
+
+/* ================= USER MANAGEMENT ================= */
+
+function loadUsers() {
+  if (!isAdmin) return;
+
+  const users = Auth.getUsers();
+
+  userTable.innerHTML = users.map(u => `
+    <tr>
+      <td>${escapeHtml(u.username)}</td>
+      <td>${escapeHtml(u.fullname || "")}</td>
+      <td>${escapeHtml(u.role || "user")}</td>
+      <td>${u.enabled === false ? "Tắt" : "Bật"}</td>
+      <td>
+        <button onclick="editUser('${escapeJs(u.username)}')">Sửa</button>
+
+        <button class="gray" onclick="toggleUser('${escapeJs(u.username)}')">
+          ${u.enabled === false ? "Bật" : "Tắt"}
+        </button>
+
+        <button class="danger" onclick="deleteUser('${escapeJs(u.username)}')">
+          Xoá
+        </button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function saveUser() {
+  if (!isAdmin) {
+    alert("Chỉ Admin mới được quản lý người dùng");
+    return;
+  }
+
+  const users = Auth.getUsers();
+
+  const data = {
+    username: username.value.trim(),
+    password: password.value,
+    fullname: fullname.value.trim(),
+    role: role.value,
+    enabled: true
+  };
+
+  if (!data.username || !data.password) {
+    alert("Chưa nhập username hoặc password");
+    return;
+  }
+
+  const index = users.findIndex(u => u.username === data.username);
+
+  if (index >= 0) {
+    users[index] = {
+      ...users[index],
+      ...data
+    };
+  } else {
+    users.push(data);
+  }
+
+  Auth.saveUsers(users);
+  clearUserForm();
+  loadUsers();
+}
+
+function editUser(userName) {
+  if (!isAdmin) return;
+
+  const user = Auth.getUsers().find(u => u.username === userName);
+  if (!user) return;
+
+  username.value = user.username;
+  password.value = user.password;
+  fullname.value = user.fullname || "";
+  role.value = user.role || "user";
+
+  username.readOnly = true;
+}
+
+function toggleUser(userName) {
+  if (!isAdmin) return;
+
+  const users = Auth.getUsers();
+  const user = users.find(u => u.username === userName);
+
+  if (!user) return;
+
+  if (user.username === currentUser.username) {
+    alert("Không thể tự tắt tài khoản đang đăng nhập");
+    return;
+  }
+
+  user.enabled = user.enabled === false ? true : false;
+
+  Auth.saveUsers(users);
+  loadUsers();
+}
+
+function deleteUser(userName) {
+  if (!isAdmin) return;
+
+  if (userName === "admin") {
+    alert("Không xoá tài khoản admin mặc định");
+    return;
+  }
+
+  if (userName === currentUser.username) {
+    alert("Không thể xoá tài khoản đang đăng nhập");
+    return;
+  }
+
+  if (!confirm(`Xoá user ${userName}?`)) return;
+
+  const users = Auth.getUsers().filter(u => u.username !== userName);
+
+  Auth.saveUsers(users);
+  loadUsers();
+}
+
+function clearUserForm() {
+  username.value = "";
+  password.value = "";
+  fullname.value = "";
+  role.value = "user";
+  username.readOnly = false;
+}
+
+/* ================= TELEGRAM ================= */
 
 async function loadTelegramSettings() {
   if (!isAdmin) return;
@@ -238,6 +403,8 @@ async function testTelegram() {
   });
 }
 
+/* ================= SYSTEM ================= */
+
 async function checkHealth() {
   const json = await api("/api/health");
 
@@ -252,7 +419,25 @@ async function loadThresholds() {
   await api("/api/logger/thresholds");
 }
 
-loadTelegramSettings();
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function escapeJs(value) {
+  return String(value)
+    .replaceAll("\\", "\\\\")
+    .replaceAll("'", "\\'");
+}
+
+if (isAdmin) {
+  loadUsers();
+  loadTelegramSettings();
+}
 </script>
 </body>
 </html>

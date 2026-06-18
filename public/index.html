@@ -2,216 +2,61 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Trang chủ</title>
+  <title>Dashboard</title>
+
   <link rel="stylesheet" href="/shared/layout.css">
   <script src="/shared/auth.js"></script>
   <script src="/shared/layout.js"></script>
 </head>
 
 <body>
-  <main class="page-content">
-    <div class="card">
-      <h2>Trang chủ</h2>
-      <p id="welcomeText"></p>
-    </div>
+<main class="page-content">
+  <div class="card">
+    <h2>Dashboard</h2>
+    <p>Xin chào <b id="welcomeUser"></b></p>
+  </div>
 
-    <div class="card" id="userManageCard" style="display:none;">
-      <h2>Quản lý người dùng</h2>
+  <div class="card">
+    <h3>Tổng quan hệ thống</h3>
 
-      <div class="form-grid">
-        <input id="username" placeholder="Username">
-        <input id="password" placeholder="Password">
-        <input id="fullname" placeholder="Họ tên">
+    <button onclick="loadSummary()">Tải tổng quan</button>
 
-        <select id="role">
-          <option value="admin">Admin</option>
-          <option value="user">User</option>
-        </select>
-      </div>
+    <pre id="summaryOutput">Chưa có dữ liệu</pre>
+  </div>
+</main>
 
-      <br>
+<script>
+AppLayout.initLayout("Dashboard");
 
-      <button onclick="saveUser()">Lưu người dùng</button>
-      <button class="gray" onclick="clearForm()">Làm mới</button>
-    </div>
+const currentUser = Auth.getCurrentUser();
 
-    <div class="card" id="userListCard" style="display:none;">
-      <h3>Danh sách người dùng</h3>
+welcomeUser.textContent =
+  currentUser.fullname || currentUser.username;
 
-      <table>
-        <thead>
-          <tr>
-            <th>Username</th>
-            <th>Họ tên</th>
-            <th>Role</th>
-            <th>Trạng thái</th>
-            <th>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody id="userTable"></tbody>
-      </table>
-    </div>
+async function loadSummary() {
+  try {
+    const [healthRes, mapRes] = await Promise.all([
+      fetch("/api/health"),
+      fetch("/api/logger/readings/map")
+    ]);
 
-    <div class="card" id="noPermissionCard" style="display:none;">
-      <h3>Thông báo</h3>
-      <p>Tài khoản của anh không có quyền quản lý người dùng.</p>
-    </div>
-  </main>
+    const health = await healthRes.json();
+    const map = await mapRes.json();
 
-  <script>
-    AppLayout.initLayout("Trang chủ");
+    summaryOutput.textContent = JSON.stringify({
+      health,
+      total_loggers: map.success ? map.data.length : 0,
+      loggers: map.success ? map.data.slice(0, 10) : []
+    }, null, 2);
+  } catch (err) {
+    summaryOutput.textContent = JSON.stringify({
+      success: false,
+      message: err.message
+    }, null, 2);
+  }
+}
 
-    const currentUser = Auth.getCurrentUser();
-    const isAdmin = currentUser && currentUser.role === "admin";
-
-    welcomeText.textContent = `Xin chào ${currentUser.fullname || currentUser.username} - quyền: ${currentUser.role}`;
-
-    if (isAdmin) {
-      userManageCard.style.display = "block";
-      userListCard.style.display = "block";
-      loadUsers();
-    } else {
-      noPermissionCard.style.display = "block";
-    }
-
-    function requireAdminAction() {
-      if (!isAdmin) {
-        alert("Chỉ tài khoản admin mới có quyền thêm/sửa/xoá người dùng");
-        return false;
-      }
-
-      return true;
-    }
-
-    function loadUsers() {
-      if (!requireAdminAction()) return;
-
-      const users = Auth.getUsers();
-
-      userTable.innerHTML = users.map(u => `
-        <tr>
-          <td>${escapeHtml(u.username)}</td>
-          <td>${escapeHtml(u.fullname || "")}</td>
-          <td>${escapeHtml(u.role || "user")}</td>
-          <td>${u.enabled === false ? "Tắt" : "Bật"}</td>
-          <td>
-            <button onclick="editUser('${escapeJs(u.username)}')">Sửa</button>
-            <button class="gray" onclick="toggleUser('${escapeJs(u.username)}')">
-              ${u.enabled === false ? "Bật" : "Tắt"}
-            </button>
-            <button class="danger" onclick="deleteUser('${escapeJs(u.username)}')">Xoá</button>
-          </td>
-        </tr>
-      `).join("");
-    }
-
-    function saveUser() {
-      if (!requireAdminAction()) return;
-
-      const users = Auth.getUsers();
-
-      const data = {
-        username: username.value.trim(),
-        password: password.value,
-        fullname: fullname.value.trim(),
-        role: role.value,
-        enabled: true
-      };
-
-      if (!data.username || !data.password) {
-        alert("Chưa nhập username hoặc password");
-        return;
-      }
-
-      const index = users.findIndex(u => u.username === data.username);
-
-      if (index >= 0) {
-        users[index] = {
-          ...users[index],
-          ...data
-        };
-      } else {
-        users.push(data);
-      }
-
-      Auth.saveUsers(users);
-      clearForm();
-      loadUsers();
-    }
-
-    function editUser(userName) {
-      if (!requireAdminAction()) return;
-
-      const user = Auth.getUsers().find(u => u.username === userName);
-      if (!user) return;
-
-      username.value = user.username;
-      password.value = user.password;
-      fullname.value = user.fullname || "";
-      role.value = user.role || "user";
-      username.readOnly = true;
-    }
-
-    function toggleUser(userName) {
-      if (!requireAdminAction()) return;
-
-      const users = Auth.getUsers();
-      const user = users.find(u => u.username === userName);
-      if (!user) return;
-
-      if (user.username === currentUser.username) {
-        alert("Không thể tự tắt tài khoản đang đăng nhập");
-        return;
-      }
-
-      user.enabled = user.enabled === false ? true : false;
-
-      Auth.saveUsers(users);
-      loadUsers();
-    }
-
-    function deleteUser(userName) {
-      if (!requireAdminAction()) return;
-
-      if (userName === "admin") {
-        alert("Không xoá tài khoản admin mặc định");
-        return;
-      }
-
-      if (userName === currentUser.username) {
-        alert("Không thể xoá tài khoản đang đăng nhập");
-        return;
-      }
-
-      if (!confirm(`Xoá user ${userName}?`)) return;
-
-      const users = Auth.getUsers().filter(u => u.username !== userName);
-      Auth.saveUsers(users);
-      loadUsers();
-    }
-
-    function clearForm() {
-      username.value = "";
-      password.value = "";
-      fullname.value = "";
-      role.value = "user";
-      username.readOnly = false;
-    }
-
-    function escapeHtml(value) {
-      return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-
-    function escapeJs(value) {
-      return String(value)
-        .replaceAll("\\", "\\\\")
-        .replaceAll("'", "\\'");
-    }
-  </script>
+loadSummary();
+</script>
 </body>
 </html>
