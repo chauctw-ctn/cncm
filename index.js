@@ -59,6 +59,7 @@ function savePayloads(payloads, sourceName) {
 
 function startMqttService() {
   try {
+    console.log("[MQTT] Starting");
     const client = mqttClient.connect();
 
     client.on("connect", () => {
@@ -88,6 +89,7 @@ function startMqttService() {
 function startScadaService() {
   try {
     const intervalMs = Number(process.env.SCADA_INTERVAL_MS) || 60000;
+    console.log(`[SCADA] Starting, interval=${intervalMs}ms`);
 
     const timer = scadaClient.startPolling(
       (payloads) => {
@@ -109,11 +111,15 @@ function startScadaService() {
 
 function startTvaService() {
   try {
+    const fetchIntervalMs = Number(process.env.TVA_FETCH_INTERVAL_MS) || 30000;
+    const saveIntervalMinutes = Number(process.env.TVA_SAVE_INTERVAL_MINUTES) || 5;
+    console.log(`[TVA] Starting, fetchInterval=${fetchIntervalMs}ms, saveInterval=${saveIntervalMinutes}m`);
+
     const jobs = tvaClient.scheduleTVAJobs({
       db: DB_PATH,
       source: "tva",
-      fetchIntervalMs: Number(process.env.TVA_FETCH_INTERVAL_MS) || 30000,
-      saveIntervalMinutes: Number(process.env.TVA_SAVE_INTERVAL_MINUTES) || 5,
+      fetchIntervalMs,
+      saveIntervalMinutes,
       processNdjson: (ndjson, options) => {
         return processNdjson(ndjson, {
           ...options,
@@ -132,11 +138,15 @@ function startTvaService() {
 
 function startMonreService() {
   try {
+    const fetchIntervalMs = Number(process.env.MONRE_FETCH_INTERVAL_MS) || 30000;
+    const saveIntervalMinutes = Number(process.env.MONRE_SAVE_INTERVAL_MINUTES) || 5;
+    console.log(`[MONRE] Starting, fetchInterval=${fetchIntervalMs}ms, saveInterval=${saveIntervalMinutes}m`);
+
     const jobs = monreClient.scheduleMonreJobs({
       db: DB_PATH,
       source: "monre",
-      fetchIntervalMs: Number(process.env.MONRE_FETCH_INTERVAL_MS) || 30000,
-      saveIntervalMinutes: Number(process.env.MONRE_SAVE_INTERVAL_MINUTES) || 5,
+      fetchIntervalMs,
+      saveIntervalMinutes,
       processNdjson: (ndjson, options) => {
         return processNdjson(ndjson, {
           ...options,

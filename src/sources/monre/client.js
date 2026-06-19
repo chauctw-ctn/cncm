@@ -283,8 +283,10 @@ function scheduleFetchEveryThirtySeconds(overrides = {}) {
     inFlight = true;
 
     try {
+      console.log("[MONRE][FETCH] Starting");
       const features = await fetchMonreData(overrides);
       const normalized = normalizeMonreFeatures(features, overrides);
+      console.log(`[MONRE][FETCH] Got ${normalized.length} stations from ${features.length} features`);
 
       normalized.forEach((payload) => {
         console.log(`[MONRE][DATA] ${JSON.stringify(payload)}`);
@@ -328,7 +330,10 @@ function scheduleEveryFiveMinutes(overrides = {}) {
     const cached = getLatestNormalized();
     const saveTs = formatTimestamp(now);
 
-    if (!cached || cached.length === 0) return;
+    if (!cached || cached.length === 0) {
+      console.log(`[MONRE][SAVE] ${saveTs} skipped: no cached data`);
+      return;
+    }
 
     const ndjson = normalizeToNdjson(cached);
 

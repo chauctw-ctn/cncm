@@ -338,8 +338,10 @@ function scheduleFetchEveryThirtySeconds(overrides = {}) {
     inFlight = true;
 
     try {
+      console.log("[TVA][FETCH] Starting");
       const result = await fetchTVAData(overrides);
       const normalized = normalizeStations(result.stations, overrides);
+      console.log(`[TVA][FETCH] Got ${normalized.length} stations`);
 
       normalized.forEach((payload) => {
         console.log(`[TVA][DATA] ${JSON.stringify(payload)}`);
@@ -383,7 +385,10 @@ function scheduleEveryFiveMinutes(overrides = {}) {
     const cached = getLatestNormalized();
     const saveTs = formatTimestamp(now);
 
-    if (!cached || cached.length === 0) return;
+    if (!cached || cached.length === 0) {
+      console.log(`[TVA][SAVE] ${saveTs} skipped: no cached data`);
+      return;
+    }
 
     const ndjson = normalizeToNdjson(cached);
 

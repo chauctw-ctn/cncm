@@ -276,7 +276,9 @@ async function fetchScadaData(overrides = {}) {
 function startPolling(callback, intervalMs = 60000, options = {}) {
   const execute = async () => {
     try {
+      console.log("[SCADA][FETCH] Starting");
       const data = await fetchScadaData(options);
+      console.log(`[SCADA][FETCH] Got ${Array.isArray(data) ? data.length : 0} stations`);
 
       if (Array.isArray(data) && data.length > 0 && typeof callback === "function") {
         callback(data);
