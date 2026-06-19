@@ -5,23 +5,387 @@
   <title>Dashboard</title>
 
   <link rel="stylesheet" href="/shared/layout.css">
+  <link rel="stylesheet" href="/shared/gauge.css">
+
   <script src="/shared/auth.js"></script>
   <script src="/shared/layout.js"></script>
+  <script src="/shared/gauge.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .summary-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .summary-box {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .summary-box b {
+      display: block;
+      font-size: 22px;
+      margin-top: 6px;
+    }
+
+    .dashboard-gauge-section {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
+      gap: 8px !important;
+      height: 210px !important;
+      min-height: 210px !important;
+      overflow: hidden !important;
+      padding: 0 !important;
+    }
+
+    .dashboard-gauge-section .gauge-item {
+      height: 210px !important;
+      min-height: 210px !important;
+      background: #f8fafc !important;
+      border: 1px solid #e5e7eb !important;
+      border-radius: 10px !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      overflow: hidden !important;
+
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+
+    .dashboard-gauge-section .gauge-item > div {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    .dashboard-gauge-section .scada-gauge {
+      width: 100% !important;
+      height: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+
+    .dashboard-gauge-section .scada-gauge-container {
+      width: 100% !important;
+      height: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+
+    .dashboard-gauge-section svg {
+      width: 100% !important;
+      height: 205px !important;
+      max-height: 205px !important;
+      display: block !important;
+    }
+
+    
+
+    .kpi-toolbar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .kpi-toolbar input,
+    .kpi-toolbar select {
+      width: 180px;
+    }
+
+    .chart-wrap {
+      width: 100%;
+      height: 420px;
+    }
+
+    .multi-select {
+      position: relative;
+      width: 260px;
+    }
+
+    .multi-select-btn {
+      width: 100%;
+      background: white;
+      color: #1f2937;
+      border: 1px solid #cbd5e1;
+      text-align: left;
+    }
+
+    .multi-select-list {
+      display: none;
+      position: absolute;
+      z-index: 1000;
+      top: 42px;
+      left: 0;
+      min-width: 280px;
+      max-height: 280px;
+      overflow: auto;
+      background: white;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    }
+
+    .multi-select.active .multi-select-list {
+      display: block;
+    }
+
+    .multi-select-list label {
+      display: block;
+      padding: 5px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .multi-select-list input {
+      width: auto;
+      margin-right: 6px;
+    }
+
+    .alarm-table tr.alarm-high {
+      background: #fee2e2;
+    }
+
+    .alarm-table tr.alarm-low {
+      background: #ffedd5;
+    }
+
+    .alarm-table tr:hover {
+      background: #fef3c7;
+    }
+
+    .alarm-status {
+      font-weight: bold;
+    }
+
+    .alarm-high .alarm-status {
+      color: #dc2626;
+    }
+
+    .alarm-low .alarm-status {
+      color: #ea580c;
+    }
+
+    .empty-text {
+      color: #64748b;
+      font-style: italic;
+      padding: 12px;
+    }
+
+    .kpi-gauge-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .kpi-gauge-header h3 {
+      margin: 0;
+    }
+
+    .kpi-gauge-header select {
+      width: 180px;
+    }
+
+    @media (max-width: 1200px) {
+      .summary-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .dashboard-gauge-section {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+    }
+
+    #kpiGauges {
+      display: grid !important;
+      /* grid-template-columns: repeat(4, minmax(260px, 1fr)) !important; */
+      grid-template-columns: repeat(var(--kpi-count, 5), minmax(160px, 1fr)) !important;
+      gap: 12px !important;
+      height: auto !important;
+      min-height: 300px !important;
+      overflow: visible !important;
+    }
+
+    #kpiGauges .gauge-item {
+      height: 300px !important;
+      min-height: 300px !important;
+      /* background: #0d1b3e !important; */
+      border-radius: 5px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      overflow: visible !important;
+    }
+
+    #kpiGauges .gauge-item > div {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    #kpiGauges .scada-gauge,
+    #kpiGauges .scada-gauge-container {
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 280px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+
+    #kpiGauges svg {
+      width: 100% !important;
+      height: 280px !important;
+      max-height: 280px !important;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+  </style>
 </head>
 
 <body>
 <main class="page-content">
-  <div class="card">
-    <h2>Dashboard</h2>
-    <p>Xin chào <b id="welcomeUser"></b></p>
-  </div>
+  <div class="dashboard-grid">
 
-  <div class="card">
-    <h3>Tổng quan hệ thống</h3>
+    <div class="card">
+      <h2>Dashboard</h2>
+      <p>Xin chào <b id="welcomeUser"></b></p>
 
-    <button onclick="loadSummary()">Tải tổng quan</button>
+      <div class="summary-row">
+        <div class="summary-box">
+          Tổng logger
+          <b id="totalLoggers">--</b>
+        </div>
 
-    <pre id="summaryOutput">Chưa có dữ liệu</pre>
+        <div class="summary-box">
+          Tổng KPI
+          <b id="totalKpis">--</b>
+        </div>
+
+        <div class="summary-box">
+          Cảnh báo đang vi phạm
+          <b id="totalAlarms">--</b>
+        </div>
+
+        <div class="summary-box">
+          Server
+          <b id="serverStatus">--</b>
+        </div>
+      </div>
+    </div>
+
+    <!-- <div class="card">
+      <h3>KPI Gauge</h3>
+      <div id="kpiGauges" class="gauge-section dashboard-gauge-section"></div>
+    </div> -->
+    <div class="card">
+      <div class="kpi-gauge-header">
+        <h3>KPI Gauge</h3>
+
+        <div>
+          <label>Chọn chỉ số hiển thị</label>
+          <select id="gaugeMetricSelect" onchange="loadKpiGauges()">
+            <option value="current">Hiện tại</option>
+            <option value="today">Ngày hiện tại</option>
+            <option value="yesterday">Ngày trước</option>
+            <option value="this_month">Tháng hiện tại</option>
+            <option value="last_month">Tháng trước</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="kpiGauges" class="gauge-section dashboard-gauge-section"></div>
+    </div>
+
+    <div class="card">
+      <h3>Biểu đồ toàn bộ KPI theo thời gian</h3>
+
+      <div class="kpi-toolbar">
+        <label>Từ ngày</label>
+        <input id="chartFrom" type="datetime-local">
+
+        <label>Đến ngày</label>
+        <input id="chartTo" type="datetime-local">
+
+        <label>Chu kỳ</label>
+        <select id="chartInterval">
+          <option value="5m">5 phút</option>
+          <option value="10m">10 phút</option>
+          <option value="15m" selected>15 phút</option>
+          <option value="30m">30 phút</option>
+          <option value="1h">1 giờ</option>
+          <option value="2h">2 giờ</option>
+          <option value="6h">6 giờ</option>
+          <option value="1d">1 ngày</option>
+        </select>
+
+        <div class="multi-select" id="kpiDropdown">
+          <button type="button" class="multi-select-btn" onclick="toggleDropdown('kpiDropdown')">
+            Tất cả KPI
+          </button>
+          <div id="chartKpiCheckList" class="multi-select-list"></div>
+        </div>
+
+        <button onclick="setChartToday()">Hôm nay</button>
+        <button onclick="setChartMonth()">Tháng này</button>
+        <button onclick="loadAllKpiChart()">Xem chart</button>
+      </div>
+
+      <div class="chart-wrap">
+        <canvas id="kpiChartCanvas"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Logger / Tag đang vi phạm cảnh báo</h3>
+
+      <button onclick="loadActiveAlarms()">Tải cảnh báo</button>
+
+      <br><br>
+
+      <table class="alarm-table">
+        <thead>
+          <tr>
+            <th>Logger</th>
+            <th>Tag</th>
+            <th>Giá trị</th>
+            <th>Min</th>
+            <th>Max</th>
+            <th>Trạng thái</th>
+            <th>Nguồn</th>
+            <th>Thời gian</th>
+          </tr>
+        </thead>
+        <tbody id="alarmTable">
+          <tr>
+            <td colspan="8" class="empty-text">Chưa có dữ liệu</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
   </div>
 </main>
 
@@ -29,34 +393,459 @@
 AppLayout.initLayout("Dashboard");
 
 const currentUser = Auth.getCurrentUser();
+welcomeUser.textContent = currentUser.fullname || currentUser.username;
 
-welcomeUser.textContent =
-  currentUser.fullname || currentUser.username;
+let kpiConfigs = [];
+let kpiChart = null;
+let kpiGaugeObjects = [];
 
-async function loadSummary() {
+function toggleDropdown(id) {
+  document.querySelectorAll(".multi-select").forEach(el => {
+    if (el.id !== id) el.classList.remove("active");
+  });
+
+  document.getElementById(id).classList.toggle("active");
+}
+
+document.addEventListener("click", e => {
+  if (!e.target.closest(".multi-select")) {
+    document.querySelectorAll(".multi-select").forEach(el => el.classList.remove("active"));
+  }
+});
+
+document.addEventListener("change", e => {
+  if (e.target.classList.contains("kpi-chart-check")) {
+    updateKpiDropdownLabel();
+  }
+});
+
+function updateKpiDropdownLabel() {
+  const count = getCheckedChartKpis().length;
+
+  document.querySelector("#kpiDropdown .multi-select-btn").textContent =
+    count ? `KPI đã chọn: ${count}` : "Tất cả KPI";
+}
+
+function getCheckedChartKpis() {
+  return Array.from(document.querySelectorAll(".kpi-chart-check:checked"))
+    .map(cb => cb.value);
+}
+
+function toApiDateTime(value) {
+  if (!value) return "";
+
+  const d = new Date(value);
+
+  if (Number.isNaN(d.getTime())) return "";
+
+  const pad = v => String(v).padStart(2, "0");
+
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:00`;
+}
+
+function toDateTimeLocalValue(date) {
+  const pad = v => String(v).padStart(2, "0");
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function formatNumber(value, decimals = 0) {
+  const n = Number(value);
+
+  if (Number.isNaN(n)) return value ?? "--";
+
+  return new Intl.NumberFormat("vi-VN", {
+    maximumFractionDigits: decimals
+  }).format(n);
+}
+
+async function api(url, options = {}) {
+  const res = await fetch(url, {
+    cache: "no-store",
+    ...options
+  });
+
+  const text = await res.text();
+
   try {
-    const [healthRes, mapRes] = await Promise.all([
-      fetch("/api/health"),
-      fetch("/api/logger/readings/map")
-    ]);
+    return JSON.parse(text);
+  } catch {
+    console.error("API không trả JSON:", url, text.slice(0, 300));
 
-    const health = await healthRes.json();
-    const map = await mapRes.json();
-
-    summaryOutput.textContent = JSON.stringify({
-      health,
-      total_loggers: map.success ? map.data.length : 0,
-      loggers: map.success ? map.data.slice(0, 10) : []
-    }, null, 2);
-  } catch (err) {
-    summaryOutput.textContent = JSON.stringify({
+    return {
       success: false,
-      message: err.message
-    }, null, 2);
+      message: "API không trả JSON",
+      url,
+      preview: text.slice(0, 300)
+    };
   }
 }
 
-loadSummary();
+async function loadDashboardSummary() {
+  try {
+    const [health, map, kpis, alarms] = await Promise.all([
+      api("/api/health"),
+      api("/api/logger/readings/map"),
+      api("/api/logger/kpis"),
+      api("/api/logger/alarms/active")
+    ]);
+
+    totalLoggers.textContent = map.success ? map.data.length : "--";
+    totalKpis.textContent = kpis.success ? kpis.data.length : "--";
+    totalAlarms.textContent = alarms.success ? alarms.total : "--";
+    serverStatus.textContent = health.success ? "OK" : "ERROR";
+  } catch {
+    serverStatus.textContent = "ERROR";
+  }
+}
+
+async function loadKpiConfigs() {
+  const listJson = await api("/api/logger/kpis");
+
+  if (!listJson.success) {
+    kpiConfigs = [];
+    return [];
+  }
+
+  kpiConfigs = listJson.data || [];
+  totalKpis.textContent = kpiConfigs.length;
+
+  chartKpiCheckList.innerHTML = kpiConfigs.map(kpi => `
+    <label>
+      <input type="checkbox" class="kpi-chart-check" value="${escapeHtml(kpi.kpi_id)}">
+      ${escapeHtml(kpi.name || kpi.kpi_id)}
+      <small>(${escapeHtml(kpi.kpi_id)})</small>
+    </label>
+  `).join("");
+
+  updateKpiDropdownLabel();
+
+  return kpiConfigs;
+}
+
+const KPI_GAUGE_COLORS = [
+  "#2563eb",
+  "#16a34a",
+  "#f59e0b",
+  "#dc2626",
+  "#7c3aed",
+  "#0891b2",
+  "#ea580c",
+  "#0f766e"
+];
+
+function getKpiGaugeValue(valueJson, metric) {
+  if (!valueJson || !valueJson.success) {
+    return 0;
+  }
+
+  if (metric === "current") {
+    return valueJson.current?.value ?? valueJson.value ?? 0;
+  }
+
+  if (metric === "today") {
+    return valueJson.periods?.today?.value ?? valueJson.today?.value ?? valueJson.value ?? 0;
+  }
+
+  if (metric === "yesterday") {
+    return valueJson.periods?.yesterday?.value ?? 0;
+  }
+
+  if (metric === "this_month") {
+    return valueJson.periods?.this_month?.value ?? valueJson.month?.value ?? 0;
+  }
+
+  if (metric === "last_month") {
+    return valueJson.periods?.last_month?.value ?? 0;
+  }
+
+  return valueJson.value ?? 0;
+}
+
+function getKpiGaugeTitle(kpi, metric) {
+  const base = kpi.name || kpi.kpi_id;
+
+  const labelMap = {
+    current: "Hiện tại",
+    today: "Ngày hiện tại",
+    yesterday: "Ngày trước",
+    this_month: "Tháng hiện tại",
+    last_month: "Tháng trước"
+  };
+
+  return `${base} - ${labelMap[metric] || ""}`;
+}
+async function loadKpiGauges() {
+  if (!window.ScadaGauge) {
+    kpiGauges.innerHTML = `<div class="empty-text">Không tải được gauge.js</div>`;
+    kpiGauges.style.setProperty("--kpi-count", kpiConfigs.length || 1);
+    return;
+  }
+
+  if (!kpiConfigs.length) {
+    await loadKpiConfigs();
+  }
+
+  kpiGaugeObjects.forEach(g => {
+    if (g && typeof g.stop === "function") g.stop();
+  });
+
+  kpiGaugeObjects = [];
+  kpiGauges.innerHTML = "";
+
+  if (!kpiConfigs.length) {
+    kpiGauges.innerHTML = `<div class="empty-text">Chưa có KPI. Vào Settings → KPI Config để thêm KPI.</div>`;
+    return;
+  }
+
+  for (let i = 0; i < kpiConfigs.length; i += 1) {
+    const kpi = kpiConfigs[i];
+    const gaugeId = `kpi_gauge_${i}`;
+
+    const item = document.createElement("div");
+    item.className = "gauge-item";
+    item.innerHTML = `<div id="${gaugeId}"></div>`;
+    kpiGauges.appendChild(item);
+
+    const valueJson = await api(`/api/logger/kpis/${encodeURIComponent(kpi.kpi_id)}/value`);
+
+    if (!valueJson.success) {
+      item.innerHTML = `<div class="empty-text">Lỗi KPI ${escapeHtml(kpi.kpi_id)}</div>`;
+      continue;
+    }
+
+    // const value =
+    //   kpi.kpi_type === "kpi-total"
+    //     ? valueJson.today?.value ?? valueJson.value ?? 0
+    //     : valueJson.value ?? 0;
+
+    // const unit = valueJson.unit || (kpi.kpi_type === "kpi-total" ? "m³" : "m³/h");
+
+    const metric = gaugeMetricSelect.value || "current";
+    const value = getKpiGaugeValue(valueJson, metric);
+    const unit =
+      valueJson.unit ||
+      (kpi.kpi_type === "kpi-total" ? "m³" : "m³/h");
+
+    const maxValue =
+      kpi.kpi_type === "kpi-total"
+        ? Math.max(Number(value) * 1.3, 1000)
+        : Math.max(Number(value) * 1.5, 100);
+
+    const gauge = new ScadaGauge(gaugeId, {
+      min: 0,
+      max: maxValue,
+      value,
+      title: getKpiGaugeTitle(kpi, metric),
+      unit,
+      color: kpi.kpi_type === "kpi-total" ? "#22C55E" : "#38BDF8",
+      decimals: 0,
+      formatValue: v => formatNumber(v, 0)
+    });
+
+    kpiGaugeObjects.push(gauge);
+  }
+}
+
+function setChartToday() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 0);
+
+  chartFrom.value = toDateTimeLocalValue(start);
+  chartTo.value = toDateTimeLocalValue(end);
+}
+
+function setChartMonth() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 0);
+
+  chartFrom.value = toDateTimeLocalValue(start);
+  chartTo.value = toDateTimeLocalValue(end);
+}
+
+async function loadAllKpiChart() {
+  if (!kpiConfigs.length) {
+    await loadKpiConfigs();
+  }
+
+  if (!kpiConfigs.length) return;
+
+  const checked = getCheckedChartKpis();
+
+  const selectedKpis =
+    checked.length
+      ? kpiConfigs.filter(k => checked.includes(k.kpi_id))
+      : kpiConfigs;
+
+  const params = new URLSearchParams();
+
+  const from = toApiDateTime(chartFrom.value);
+  const to = toApiDateTime(chartTo.value);
+
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
+  if (chartInterval.value) params.set("interval", chartInterval.value);
+
+  const seriesResults = [];
+
+  for (const kpi of selectedKpis) {
+    const json = await api(`/api/logger/kpis/${encodeURIComponent(kpi.kpi_id)}/history?${params.toString()}`);
+
+    if (json.success) {
+      seriesResults.push({
+        kpi,
+        json
+      });
+    }
+  }
+
+  const labelSet = new Set();
+
+  seriesResults.forEach(item => {
+    (item.json.data || []).forEach(row => {
+      labelSet.add(row.ts);
+    });
+  });
+
+  const labels = Array.from(labelSet).sort();
+
+  const datasets = seriesResults.map(item => {
+    const valueMap = {};
+
+    (item.json.data || []).forEach(row => {
+      valueMap[row.ts] = Number(row.value || 0);
+    });
+
+    return {
+      label: item.json.name || item.kpi.name || item.kpi.kpi_id,
+      data: labels.map(ts => valueMap[ts] ?? null),
+      tension: 0.25,
+      fill: false,
+      spanGaps: true
+    };
+  });
+
+  const ctx = document.getElementById("kpiChartCanvas");
+
+  if (kpiChart) {
+    kpiChart.destroy();
+  }
+
+  kpiChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels,
+      datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: "index",
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: "bottom"
+        },
+        tooltip: {
+          callbacks: {
+            label: context => {
+              return `${context.dataset.label}: ${formatNumber(context.raw, 2)}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            maxRotation: 45,
+            minRotation: 0,
+            autoSkip: true,
+            maxTicksLimit: 14
+          }
+        },
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+async function loadActiveAlarms() {
+  const json = await api("/api/logger/alarms/active");
+
+  if (!json.success) return;
+
+  totalAlarms.textContent = json.total ?? json.data.length;
+
+  if (!json.data.length) {
+    alarmTable.innerHTML = `
+      <tr>
+        <td colspan="8" class="empty-text">Không có cảnh báo đang vi phạm</td>
+      </tr>
+    `;
+    return;
+  }
+
+  alarmTable.innerHTML = json.data.map(row => {
+    const cls = row.status === "HIGH" ? "alarm-high" : "alarm-low";
+
+    return `
+      <tr class="${cls}">
+        <td>
+          <b>${escapeHtml(row.logger_name || row.logger_id)}</b><br>
+          <small>${escapeHtml(row.logger_id)}</small>
+        </td>
+
+        <td>
+          <b>${escapeHtml(row.tag_name || row.tag_key)}</b><br>
+          <small>${escapeHtml(row.tag_key)}</small>
+        </td>
+
+        <td>${formatNumber(row.value, 2)} ${escapeHtml(row.unit || "")}</td>
+        <td>${row.min_value ?? "--"}</td>
+        <td>${row.max_value ?? "--"}</td>
+        <td class="alarm-status">${escapeHtml(row.status)}</td>
+        <td>${escapeHtml(row.source || "")}</td>
+        <td>${escapeHtml(row.data_ts || "")}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+async function initDashboard() {
+  setChartToday();
+
+  await loadKpiConfigs();
+
+  await Promise.all([
+    loadDashboardSummary(),
+    loadKpiGauges(),
+    loadActiveAlarms()
+  ]);
+
+  await loadAllKpiChart();
+}
+
+initDashboard();
+
+setInterval(loadDashboardSummary, 30000);
+setInterval(loadKpiGauges, 60000);
+setInterval(loadActiveAlarms, 15000);
 </script>
 </body>
 </html>

@@ -9,7 +9,9 @@ router.use("/tags", require("./tags.routes"));
 router.use("/readings", require("./readings.routes"));
 router.use("/kpis", require("./kpi.routes"));
 router.use("/history", require("./history.routes"));
+router.use("/history", require("./history-table.routes"));
 router.use("/thresholds", require("./thresholds.routes"));
 router.use("/settings", require("./settings.routes"));
+router.use("/alarms", require("./alarm.routes"));
 
 module.exports = router;

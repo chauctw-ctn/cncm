@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
@@ -748,5 +748,800 @@ function escapeJs(value) {
 loadLoggers();
 </script>
 
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Cấu hình Logger</title>
+
+  <link rel="stylesheet" href="/shared/layout.css">
+  <script src="/shared/auth.js"></script>
+  <script src="/shared/layout.js"></script>
+
+  <style>
+    .logger-toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .logger-layout {
+      display: grid;
+      grid-template-columns: 320px 1fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .logger-list-card {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .logger-search {
+      padding: 12px;
+      border-bottom: 1px solid #e5e7eb;
+      background: #f8fafc;
+    }
+
+    .logger-items {
+      height: calc(100vh - 245px);
+      overflow-y: auto;
+    }
+
+    .logger-item {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e5e7eb;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .logger-item:hover {
+      background: #f1f5f9;
+    }
+
+    .logger-item.active {
+      background: #dbeafe;
+      border-left: 4px solid #2563eb;
+    }
+
+    .logger-name {
+      font-weight: bold;
+      color: #0f172a;
+    }
+
+    .logger-meta {
+      color: #64748b;
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .form-grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    label {
+      font-weight: bold;
+      font-size: 13px;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .tag-table-wrap {
+      max-height: calc(100vh - 420px);
+      overflow: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+    }
+
+    .tag-table input,
+    .tag-table select {
+      min-width: 110px;
+    }
+
+    .copy-box {
+      margin-top: 14px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .copy-tag-list {
+      max-height: 180px;
+      overflow: auto;
+      background: white;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 8px;
+      margin-top: 8px;
+    }
+
+    .copy-tag-list label {
+      display: block;
+      font-weight: normal;
+      padding: 4px;
+    }
+
+    .copy-tag-list input {
+      width: auto;
+      margin-right: 6px;
+    }
+
+    .danger {
+      background: #dc2626;
+    }
+
+    .muted {
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    pre {
+      background: #111827;
+      color: #d1fae5;
+      padding: 12px;
+      border-radius: 8px;
+      max-height: 220px;
+      overflow: auto;
+    }
+
+    @media (max-width: 1300px) {
+      .logger-layout {
+        grid-template-columns: 300px 1fr;
+      }
+
+      .tag-card {
+        grid-column: 1 / -1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+<main class="page-content">
+
+  <div class="card">
+    <div class="logger-toolbar">
+      <h2 style="margin-right:auto;">Cấu hình Logger / Tags</h2>
+
+      <button onclick="newLogger()">Thêm Logger</button>
+      <button class="gray" onclick="reloadAll()">Tải lại</button>
+      <button onclick="saveLogger()">Lưu Logger</button>
+      <button class="danger" onclick="deleteLogger()">Xoá Logger</button>
+    </div>
+
+    <p class="muted">
+      Chọn logger bên trái để sửa thông tin, toạ độ, tên hiển thị và các tag thuộc logger.
+    </p>
+  </div>
+
+  <div class="logger-layout">
+
+    <div class="card logger-list-card">
+      <div class="logger-search">
+        <input
+          id="loggerSearch"
+          placeholder="Tìm logger id / tên / nguồn..."
+          oninput="renderLoggerList()"
+        >
+      </div>
+
+      <div id="loggerList" class="logger-items">
+        Đang tải...
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Thông tin Logger</h3>
+
+      <div class="form-grid-2">
+        <div>
+          <label>Logger ID</label>
+          <input id="logger_id" placeholder="mqtt_g15">
+        </div>
+
+        <div>
+          <label>Raw ID</label>
+          <input id="raw_id" placeholder="g15">
+        </div>
+
+        <div>
+          <label>Nguồn</label>
+          <select id="source">
+            <option value="mqtt">mqtt</option>
+            <option value="scada">scada</option>
+            <option value="monre">monre</option>
+            <option value="tva">tva</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Trạng thái</label>
+          <select id="enabled">
+            <option value="1">Bật</option>
+            <option value="0">Tắt</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Tên hiển thị trên map</label>
+          <input id="name" placeholder="G15">
+        </div>
+
+        <div>
+          <label>Display order</label>
+          <input id="display_order" type="number" value="0">
+        </div>
+
+        <div>
+          <label>Latitude</label>
+          <input id="lat" type="number" step="any" placeholder="9.1835">
+        </div>
+
+        <div>
+          <label>Longitude</label>
+          <input id="lng" type="number" step="any" placeholder="105.152611">
+        </div>
+      </div>
+
+      <br>
+
+      <button onclick="saveLogger()">Lưu Logger</button>
+      <button class="gray" onclick="newLogger()">Làm mới</button>
+      <button class="danger" onclick="deleteLogger()">Xoá Logger</button>
+
+      <hr>
+
+      <h3>Response</h3>
+      <pre id="output">Chưa có dữ liệu</pre>
+    </div>
+
+    <div class="card tag-card">
+      <h3>Tags của Logger</h3>
+
+      <div class="muted" id="selectedLoggerText">
+        Chưa chọn logger
+      </div>
+
+      <br>
+
+      <div class="tag-table-wrap">
+        <table class="tag-table">
+          <thead>
+            <tr>
+              <th>Tag key</th>
+              <th>Tên hiển thị</th>
+              <th>Đơn vị</th>
+              <th>Bật</th>
+              <th>Min</th>
+              <th>Max</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tagTable">
+            <tr>
+              <td colspan="7">Chưa có tag</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <br>
+
+      <h4>Thêm tag thủ công</h4>
+
+      <div class="form-grid-2">
+        <div>
+          <label>Tag key</label>
+          <input id="new_tag_key" placeholder="flow">
+        </div>
+
+        <div>
+          <label>Tên tag</label>
+          <input id="new_tag_name" placeholder="Lưu lượng">
+        </div>
+
+        <div>
+          <label>Đơn vị</label>
+          <input id="new_tag_unit" placeholder="m³/h">
+        </div>
+
+        <div>
+          <label>Enabled</label>
+          <select id="new_tag_enabled">
+            <option value="1">Bật</option>
+            <option value="0">Tắt</option>
+          </select>
+        </div>
+      </div>
+
+      <br>
+
+      <button onclick="addManualTag()">Thêm tag</button>
+
+      <div class="copy-box">
+        <h4>Thêm tag từ logger khác</h4>
+
+        <label>Chọn logger nguồn</label>
+        <select id="sourceLoggerSelect" onchange="loadSourceLoggerTags()">
+          <option value="">-- Chọn logger nguồn --</option>
+        </select>
+
+        <div id="sourceTagList" class="copy-tag-list">
+          Chưa chọn logger nguồn
+        </div>
+
+        <br>
+
+        <button onclick="copySelectedTags()">Thêm tag đã chọn vào logger đang sửa</button>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+AppLayout.initLayout("Cấu hình Logger");
+
+let loggers = [];
+let currentLoggerId = null;
+let currentTags = [];
+let sourceTags = [];
+
+function show(data) {
+  output.textContent = JSON.stringify(data, null, 2);
+}
+
+async function api(url, options = {}) {
+  try {
+    const res = await fetch(url, {
+      cache: "no-store",
+      ...options
+    });
+
+    const text = await res.text();
+
+    try {
+      const json = JSON.parse(text);
+      show(json);
+      return json;
+    } catch {
+      const json = {
+        success: false,
+        message: "API không trả JSON",
+        url,
+        preview: text.slice(0, 300)
+      };
+      show(json);
+      return json;
+    }
+  } catch (err) {
+    const json = {
+      success: false,
+      message: err.message
+    };
+    show(json);
+    return json;
+  }
+}
+
+async function reloadAll() {
+  await loadLoggers();
+  renderLoggerList();
+  renderSourceLoggerSelect();
+
+  if (currentLoggerId) {
+    await selectLogger(currentLoggerId);
+  }
+}
+
+async function loadLoggers() {
+  const json = await api("/api/logger/points");
+
+  if (!json.success) {
+    loggerList.innerHTML = "Lỗi tải logger";
+    return;
+  }
+
+  loggers = json.data || [];
+}
+
+function renderLoggerList() {
+  const keyword = loggerSearch.value.trim().toLowerCase();
+
+  const filtered = loggers.filter(l => {
+    const text = [
+      l.logger_id,
+      l.raw_id,
+      l.name,
+      l.source
+    ].join(" ").toLowerCase();
+
+    return text.includes(keyword);
+  });
+
+  if (!filtered.length) {
+    loggerList.innerHTML = "<div class='logger-item'>Không có logger</div>";
+    return;
+  }
+
+  loggerList.innerHTML = filtered.map(l => `
+    <div
+      class="logger-item ${currentLoggerId === l.logger_id ? "active" : ""}"
+      onclick="selectLogger('${escapeJs(l.logger_id)}')"
+    >
+      <div class="logger-name">
+        ${escapeHtml(l.name || l.logger_id)}
+      </div>
+      <div class="logger-meta">
+        ${escapeHtml(l.logger_id)} | ${escapeHtml(l.source || "")}
+      </div>
+      <div class="logger-meta">
+        ${l.lat ?? ""}, ${l.lng ?? ""}
+      </div>
+    </div>
+  `).join("");
+}
+
+function renderSourceLoggerSelect() {
+  sourceLoggerSelect.innerHTML = `<option value="">-- Chọn logger nguồn --</option>`;
+
+  loggers.forEach(l => {
+    const opt = document.createElement("option");
+    opt.value = l.logger_id;
+    opt.textContent = `${l.name || l.logger_id} (${l.logger_id})`;
+    sourceLoggerSelect.appendChild(opt);
+  });
+}
+
+async function selectLogger(loggerId) {
+  const logger = loggers.find(l => l.logger_id === loggerId);
+
+  if (!logger) return;
+
+  currentLoggerId = loggerId;
+
+  logger_id.value = logger.logger_id || "";
+  logger_id.readOnly = true;
+  raw_id.value = logger.raw_id || "";
+  source.value = logger.source || "mqtt";
+  name.value = logger.name || "";
+  lat.value = logger.lat ?? "";
+  lng.value = logger.lng ?? "";
+  enabled.value = String(logger.enabled ?? 1);
+  display_order.value = logger.display_order ?? 0;
+
+  selectedLoggerText.textContent = `Logger đang sửa: ${logger.name || logger.logger_id} (${logger.logger_id})`;
+
+  renderLoggerList();
+  await loadTags(loggerId);
+}
+
+function newLogger() {
+  currentLoggerId = null;
+
+  logger_id.value = "";
+  logger_id.readOnly = false;
+  raw_id.value = "";
+  source.value = "mqtt";
+  name.value = "";
+  lat.value = "";
+  lng.value = "";
+  enabled.value = "1";
+  display_order.value = "0";
+
+  currentTags = [];
+  tagTable.innerHTML = `<tr><td colspan="7">Chưa có tag</td></tr>`;
+  selectedLoggerText.textContent = "Chưa chọn logger";
+
+  renderLoggerList();
+}
+
+async function saveLogger() {
+  const body = {
+    logger_id: logger_id.value.trim(),
+    source: source.value,
+    raw_id: raw_id.value.trim(),
+    name: name.value.trim(),
+    lat: nullableNumber(lat.value),
+    lng: nullableNumber(lng.value),
+    enabled: Number(enabled.value),
+    display_order: Number(display_order.value || 0)
+  };
+
+  if (!body.logger_id) {
+    alert("Chưa nhập logger_id");
+    return;
+  }
+
+  const method = currentLoggerId ? "PUT" : "POST";
+  const url = currentLoggerId
+    ? `/api/logger/points/${encodeURIComponent(currentLoggerId)}`
+    : "/api/logger/points";
+
+  const json = await api(url, {
+    method,
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (json.success) {
+    currentLoggerId = body.logger_id;
+    await reloadAll();
+    await selectLogger(body.logger_id);
+  }
+}
+
+async function deleteLogger() {
+  const id = currentLoggerId || logger_id.value.trim();
+
+  if (!id) {
+    alert("Chưa chọn logger");
+    return;
+  }
+
+  if (!confirm(`Xoá logger ${id}?`)) return;
+
+  const json = await api(`/api/logger/points/${encodeURIComponent(id)}`, {
+    method: "DELETE"
+  });
+
+  if (json.success) {
+    newLogger();
+    await reloadAll();
+  }
+}
+
+async function loadTags(loggerId) {
+  const json = await api(`/api/logger/tags/${encodeURIComponent(loggerId)}`);
+
+  if (!json.success) {
+    tagTable.innerHTML = `<tr><td colspan="7">Lỗi tải tag</td></tr>`;
+    return;
+  }
+
+  currentTags = json.data || [];
+  renderTagTable();
+}
+
+function renderTagTable() {
+  if (!currentTags.length) {
+    tagTable.innerHTML = `<tr><td colspan="7">Chưa có tag</td></tr>`;
+    return;
+  }
+
+  tagTable.innerHTML = currentTags.map(tag => {
+    const safeKey = makeSafeKey(tag.tag_key);
+
+    return `
+      <tr>
+        <td>
+          <b>${escapeHtml(tag.tag_key)}</b>
+        </td>
+
+        <td>
+          <input id="tag_name_${safeKey}" value="${escapeHtml(tag.tag_name || "")}">
+        </td>
+
+        <td>
+          <input id="tag_unit_${safeKey}" value="${escapeHtml(tag.unit || "")}">
+        </td>
+
+        <td>
+          <select id="tag_enabled_${safeKey}">
+            <option value="1" ${Number(tag.enabled) === 1 ? "selected" : ""}>Bật</option>
+            <option value="0" ${Number(tag.enabled) === 0 ? "selected" : ""}>Tắt</option>
+          </select>
+        </td>
+
+        <td>
+          <input id="tag_min_${safeKey}" type="number" value="${tag.min_value ?? ""}">
+        </td>
+
+        <td>
+          <input id="tag_max_${safeKey}" type="number" value="${tag.max_value ?? ""}">
+        </td>
+
+        <td>
+          <button onclick="saveTag('${escapeJs(tag.tag_key)}')">Lưu</button>
+          <button class="danger" onclick="deleteTag('${escapeJs(tag.tag_key)}')">Xoá</button>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+async function saveTag(tagKey) {
+  if (!currentLoggerId) {
+    alert("Chưa chọn logger");
+    return;
+  }
+
+  const safeKey = makeSafeKey(tagKey);
+
+  const body = {
+    tag_key: tagKey,
+    tag_name: document.getElementById(`tag_name_${safeKey}`).value.trim(),
+    unit: document.getElementById(`tag_unit_${safeKey}`).value.trim(),
+    enabled: Number(document.getElementById(`tag_enabled_${safeKey}`).value),
+    min_value: nullableNumber(document.getElementById(`tag_min_${safeKey}`).value),
+    max_value: nullableNumber(document.getElementById(`tag_max_${safeKey}`).value)
+  };
+
+  const json = await api(
+    `/api/logger/tags/${encodeURIComponent(currentLoggerId)}/${encodeURIComponent(tagKey)}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    }
+  );
+
+  if (json.success) {
+    await loadTags(currentLoggerId);
+  }
+}
+
+async function addManualTag() {
+  if (!currentLoggerId) {
+    alert("Chưa chọn logger");
+    return;
+  }
+
+  const body = {
+    tag_key: new_tag_key.value.trim(),
+    tag_name: new_tag_name.value.trim(),
+    unit: new_tag_unit.value.trim(),
+    enabled: Number(new_tag_enabled.value)
+  };
+
+  if (!body.tag_key) {
+    alert("Chưa nhập tag_key");
+    return;
+  }
+
+  const json = await api(`/api/logger/tags/${encodeURIComponent(currentLoggerId)}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (json.success) {
+    new_tag_key.value = "";
+    new_tag_name.value = "";
+    new_tag_unit.value = "";
+    new_tag_enabled.value = "1";
+    await loadTags(currentLoggerId);
+  }
+}
+
+async function deleteTag(tagKey) {
+  if (!currentLoggerId) return;
+
+  if (!confirm(`Xoá tag ${tagKey}?`)) return;
+
+  const json = await api(
+    `/api/logger/tags/${encodeURIComponent(currentLoggerId)}/${encodeURIComponent(tagKey)}`,
+    {
+      method: "DELETE"
+    }
+  );
+
+  if (json.success) {
+    await loadTags(currentLoggerId);
+  }
+}
+
+async function loadSourceLoggerTags() {
+  const sourceLoggerId = sourceLoggerSelect.value;
+
+  if (!sourceLoggerId) {
+    sourceTagList.innerHTML = "Chưa chọn logger nguồn";
+    return;
+  }
+
+  const json = await api(`/api/logger/tags/${encodeURIComponent(sourceLoggerId)}`);
+
+  if (!json.success) {
+    sourceTagList.innerHTML = "Lỗi tải tag nguồn";
+    return;
+  }
+
+  sourceTags = json.data || [];
+
+  if (!sourceTags.length) {
+    sourceTagList.innerHTML = "Logger nguồn chưa có tag";
+    return;
+  }
+
+  sourceTagList.innerHTML = sourceTags.map(tag => `
+    <label>
+      <input
+        type="checkbox"
+        class="source-tag-check"
+        value="${escapeHtml(tag.tag_key)}"
+      >
+      <b>${escapeHtml(tag.tag_name || tag.tag_key)}</b>
+      <small>
+        (${escapeHtml(tag.tag_key)} - ${escapeHtml(tag.unit || "")})
+      </small>
+    </label>
+  `).join("");
+}
+
+async function copySelectedTags() {
+  if (!currentLoggerId) {
+    alert("Chưa chọn logger cần thêm tag");
+    return;
+  }
+
+  const selected = Array.from(document.querySelectorAll(".source-tag-check:checked"))
+    .map(cb => cb.value);
+
+  if (!selected.length) {
+    alert("Chưa chọn tag nguồn");
+    return;
+  }
+
+  for (const tagKey of selected) {
+    const tag = sourceTags.find(t => t.tag_key === tagKey);
+    if (!tag) continue;
+
+    await api(`/api/logger/tags/${encodeURIComponent(currentLoggerId)}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        tag_key: tag.tag_key,
+        tag_name: tag.tag_name || tag.tag_key,
+        unit: tag.unit || "",
+        enabled: 1
+      })
+    });
+  }
+
+  await loadTags(currentLoggerId);
+}
+
+function nullableNumber(value) {
+  if (value === "" || value === null || value === undefined) return null;
+  const n = Number(value);
+  return Number.isNaN(n) ? null : n;
+}
+
+function makeSafeKey(value) {
+  return String(value).replace(/[^a-zA-Z0-9_-]/g, "_");
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function escapeJs(value) {
+  return String(value ?? "")
+    .replaceAll("\\", "\\\\")
+    .replaceAll("'", "\\'");
+}
+
+reloadAll();
+</script>
 </body>
 </html>

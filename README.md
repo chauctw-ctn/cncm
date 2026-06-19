@@ -42,6 +42,7 @@ Y!4Kr#8Wp$6Hv@Nc
 cln@canthowassco.vn
 gP@3Lm&9Qx!7Ts#D
 
+<<<<<<< HEAD
 git add .
 git comit -m "custom history.html"
 git push
@@ -56,4 +57,3 @@ fix logger-map.html
 
 
 
-DEVICE_API_KEY=123456

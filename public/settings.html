@@ -183,6 +183,58 @@
     <pre id="output">Chưa kiểm tra</pre>
   </div>
 
+  <!-- Cấu hình cảnh báo tag -->
+  <div class="card" id="thresholdCard">
+    <h3>Cài đặt ngưỡng cảnh báo theo tag</h3>
+
+    <div class="setting-grid">
+      <div>
+        <label>Lọc logger</label>
+        <select id="threshold_filter_logger" onchange="renderThresholdAllTagsTable()">
+          <option value="">Tất cả logger</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Lọc tag</label>
+        <select id="threshold_filter_tag" onchange="renderThresholdAllTagsTable()">
+          <option value="">Tất cả tag</option>
+          <option value="flow">flow</option>
+          <option value="level">level</option>
+          <option value="totalIndex">totalIndex</option>
+          <option value="pH">pH</option>
+          <option value="TDS">TDS</option>
+          <option value="amino">amino</option>
+          <option value="nitrat">nitrat</option>
+        </select>
+      </div>
+    </div>
+
+    <br>
+
+    <button onclick="loadThresholdAllTags()">Tải toàn bộ tag</button>
+
+    <br><br>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Logger</th>
+          <th>Tag</th>
+          <th>Giá trị hiện tại</th>
+          <th>Đơn vị</th>
+          <th>Min</th>
+          <th>Max</th>
+          <th>Bật</th>
+          <th>Thao tác</th>
+        </tr>
+      </thead>
+      <tbody id="thresholdAllTagsTable"></tbody>
+    </table>
+  </div>    
+  <!-- Cấu hình cảnh báo tag -->
+   
+
 </main>
 
 <script>
@@ -437,7 +489,333 @@ function escapeJs(value) {
 if (isAdmin) {
   loadUsers();
   loadTelegramSettings();
+  loadThresholdAllTags();
 }
+
+
+// Scritp cho cấu hình cảnh báo tag
+async function loadThresholdLoggers() {
+  if (!isAdmin) return;
+
+  const json = await api("/api/logger/readings/map");
+  if (!json.success) return;
+
+  threshold_logger_id.innerHTML = `<option value="">-- Chọn logger --</option>`;
+
+  json.data.forEach(logger => {
+    const opt = document.createElement("option");
+    opt.value = logger.logger_id;
+    opt.textContent = `${logger.name || logger.logger_id} (${logger.logger_id})`;
+    threshold_logger_id.appendChild(opt);
+  });
+}
+
+async function loadThresholdTags() {
+  const loggerId = threshold_logger_id.value;
+
+  threshold_tag_key.innerHTML = `<option value="">-- Chọn tag --</option>`;
+
+  if (!loggerId) return;
+
+  const json = await api(`/api/logger/tags/${encodeURIComponent(loggerId)}`);
+  if (!json.success) return;
+
+  json.data.forEach(tag => {
+    const opt = document.createElement("option");
+    opt.value = tag.tag_key;
+    opt.textContent = `${tag.tag_name || tag.tag_key} (${tag.tag_key})`;
+    threshold_tag_key.appendChild(opt);
+  });
+}
+
+function nullableNumber(value) {
+  if (value === "" || value === null || value === undefined) return null;
+  const n = Number(value);
+  return Number.isNaN(n) ? null : n;
+}
+
+async function saveThreshold() {
+  if (!isAdmin) {
+    alert("Chỉ Admin mới được sửa ngưỡng cảnh báo");
+    thresholdCard.innerHTML = `
+      <h3>Cài đặt ngưỡng cảnh báo theo tag</h3>
+      <p>Bạn không có quyền sửa ngưỡng cảnh báo.</p>
+    `;
+    return;
+  }
+
+  if (!threshold_logger_id.value) {
+    alert("Chưa chọn logger");
+    return;
+  }
+
+  if (!threshold_tag_key.value) {
+    alert("Chưa chọn tag");
+    return;
+  }
+
+  const body = {
+    logger_id: threshold_logger_id.value,
+    tag_key: threshold_tag_key.value,
+    min_value: nullableNumber(threshold_min.value),
+    max_value: nullableNumber(threshold_max.value),
+    warning_enabled: Number(threshold_enabled.value),
+    message: threshold_message.value
+  };
+
+  await api("/api/logger/thresholds", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+
+  await loadThresholds();
+}
+
+async function loadThresholds() {
+  const json = await api("/api/logger/thresholds");
+
+  if (!json.success) return;
+
+  thresholdTable.innerHTML = json.data.map(row => `
+    <tr>
+      <td>${escapeHtml(row.logger_name || row.logger_id || "")}</td>
+      <td>${escapeHtml(row.tag_name || row.tag_key || "")}</td>
+      <td>${row.min_value ?? ""}</td>
+      <td>${row.max_value ?? ""}</td>
+      <td>${row.value ?? ""} ${escapeHtml(row.unit || "")}</td>
+      <td>${escapeHtml(row.status || "")}</td>
+    </tr>
+  `).join("");
+}
+
+async function deleteThreshold() {
+  if (!isAdmin) {
+    alert("Chỉ Admin mới được xoá ngưỡng cảnh báo");
+    return;
+  }
+
+  if (!threshold_logger_id.value || !threshold_tag_key.value) {
+    alert("Chưa chọn logger hoặc tag");
+    return;
+  }
+
+  if (!confirm(`Xoá ngưỡng ${threshold_logger_id.value}/${threshold_tag_key.value}?`)) {
+    return;
+  }
+
+  await api(
+    `/api/logger/thresholds/${encodeURIComponent(threshold_logger_id.value)}/${encodeURIComponent(threshold_tag_key.value)}`,
+    { method: "DELETE" }
+  );
+
+  await loadThresholds();
+}
+
+let thresholdLoggerData = [];
+let thresholdConfigMap = {};
+
+async function loadThresholdAllTags() {
+  if (!isAdmin) return;
+
+  const [mapJson, thresholdJson] = await Promise.all([
+    api("/api/logger/readings/map"),
+    api("/api/logger/thresholds")
+  ]);
+
+  if (!mapJson.success) return;
+
+  thresholdLoggerData = mapJson.data || [];
+  thresholdConfigMap = {};
+
+  if (thresholdJson.success && Array.isArray(thresholdJson.data)) {
+    thresholdJson.data.forEach(item => {
+      thresholdConfigMap[`${item.logger_id}__${item.tag_key}`] = item;
+    });
+  }
+
+  renderThresholdLoggerFilter();
+  renderThresholdAllTagsTable();
+}
+
+function renderThresholdLoggerFilter() {
+  const current = threshold_filter_logger.value;
+
+  threshold_filter_logger.innerHTML = `<option value="">Tất cả logger</option>`;
+
+  thresholdLoggerData.forEach(logger => {
+    const opt = document.createElement("option");
+    opt.value = logger.logger_id;
+    opt.textContent = `${logger.name || logger.logger_id} (${logger.logger_id})`;
+    threshold_filter_logger.appendChild(opt);
+  });
+
+  threshold_filter_logger.value = current;
+}
+
+function renderThresholdAllTagsTable() {
+  const filterLogger = threshold_filter_logger.value;
+  const filterTag = threshold_filter_tag.value;
+
+  const rows = [];
+
+  thresholdLoggerData.forEach(logger => {
+    if (filterLogger && logger.logger_id !== filterLogger) return;
+
+    Object.values(logger.tags || {}).forEach(tag => {
+      if (filterTag && tag.tag_key !== filterTag) return;
+
+      const key = `${logger.logger_id}__${tag.tag_key}`;
+      const config = thresholdConfigMap[key] || {};
+
+      rows.push({
+        logger_id: logger.logger_id,
+        logger_name: logger.name || logger.logger_id,
+        tag_key: tag.tag_key,
+        tag_name: tag.tag_name || tag.tag_key,
+        value: tag.value,
+        unit: tag.unit || "",
+        data_ts: tag.data_ts || "",
+        min_value: config.min_value ?? "",
+        max_value: config.max_value ?? "",
+        warning_enabled: config.warning_enabled ?? 1,
+        status: config.status || "OK"
+      });
+    });
+  });
+
+  if (!rows.length) {
+    thresholdAllTagsTable.innerHTML = `
+      <tr>
+        <td colspan="8"><i>Không có tag</i></td>
+      </tr>
+    `;
+    return;
+  }
+
+  thresholdAllTagsTable.innerHTML = rows.map(row => {
+    const safeKey = makeThresholdSafeKey(row.logger_id, row.tag_key);
+
+    return `
+      <tr>
+        <td>
+          <b>${escapeHtml(row.logger_name)}</b><br>
+          <small>${escapeHtml(row.logger_id)}</small>
+        </td>
+
+        <td>
+          <b>${escapeHtml(row.tag_name)}</b><br>
+          <small>${escapeHtml(row.tag_key)}</small>
+        </td>
+
+        <td>
+          ${row.value ?? "--"}<br>
+          <small>${escapeHtml(row.data_ts)}</small>
+        </td>
+
+        <td>${escapeHtml(row.unit)}</td>
+
+        <td>
+          <input
+            id="threshold_min_${safeKey}"
+            type="number"
+            value="${row.min_value}"
+            placeholder="Min"
+            style="width:100px"
+          >
+        </td>
+
+        <td>
+          <input
+            id="threshold_max_${safeKey}"
+            type="number"
+            value="${row.max_value}"
+            placeholder="Max"
+            style="width:100px"
+          >
+        </td>
+
+        <td>
+          <select id="threshold_enabled_${safeKey}" style="width:90px">
+            <option value="1" ${Number(row.warning_enabled) === 1 ? "selected" : ""}>Bật</option>
+            <option value="0" ${Number(row.warning_enabled) === 0 ? "selected" : ""}>Tắt</option>
+          </select>
+        </td>
+
+        <td>
+          <button onclick="saveThresholdRow('${escapeJs(row.logger_id)}','${escapeJs(row.tag_key)}','${safeKey}')">
+            Lưu
+          </button>
+
+          <button class="danger" onclick="deleteThresholdRow('${escapeJs(row.logger_id)}','${escapeJs(row.tag_key)}')">
+            Xoá
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+async function saveThresholdRow(loggerId, tagKey, safeKey) {
+  if (!isAdmin) {
+    alert("Chỉ Admin mới được sửa ngưỡng");
+    return;
+  }
+
+  const body = {
+    logger_id: loggerId,
+    tag_key: tagKey,
+    min_value: nullableNumber(document.getElementById(`threshold_min_${safeKey}`).value),
+    max_value: nullableNumber(document.getElementById(`threshold_max_${safeKey}`).value),
+    warning_enabled: Number(document.getElementById(`threshold_enabled_${safeKey}`).value),
+    message: `Cảnh báo ${loggerId}/${tagKey}`
+  };
+
+  const json = await api("/api/logger/thresholds", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (json.success) {
+    await loadThresholdAllTags();
+  }
+}
+
+async function deleteThresholdRow(loggerId, tagKey) {
+  if (!isAdmin) {
+    alert("Chỉ Admin mới được xoá ngưỡng");
+    return;
+  }
+
+  if (!confirm(`Xoá ngưỡng ${loggerId}/${tagKey}?`)) return;
+
+  const json = await api(
+    `/api/logger/thresholds/${encodeURIComponent(loggerId)}/${encodeURIComponent(tagKey)}`,
+    {
+      method: "DELETE"
+    }
+  );
+
+  if (json.success) {
+    await loadThresholdAllTags();
+  }
+}
+
+function nullableNumber(value) {
+  if (value === "" || value === null || value === undefined) return null;
+  const n = Number(value);
+  return Number.isNaN(n) ? null : n;
+}
+
+function makeThresholdSafeKey(loggerId, tagKey) {
+  return String(`${loggerId}_${tagKey}`).replace(/[^a-zA-Z0-9_-]/g, "_");
+}
+
 </script>
 </body>
 </html>
