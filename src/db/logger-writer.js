@@ -76,9 +76,43 @@ function resolveRawId(item) {
   );
 }
 
+// async function upsertLoggerPoint(db, item) {
+//   const loggerId = resolveLoggerId(item);
+//   const source = item.source || "unknown";
+//   const rawId = resolveRawId(item);
+//   const name = item.name || String(rawId || loggerId).toUpperCase();
+
+//   await run(
+//     db,
+//     `
+//     INSERT INTO logger_points (
+//       logger_id, source, raw_id, name, lat, lng, enabled
+//     )
+//     VALUES (?, ?, ?, ?, ?, ?, 1)
+//     ON CONFLICT(logger_id) DO UPDATE SET
+//       source = excluded.source,
+//       raw_id = excluded.raw_id,
+//       name = COALESCE(excluded.name, logger_points.name),
+//       lat = COALESCE(excluded.lat, logger_points.lat),
+//       lng = COALESCE(excluded.lng, logger_points.lng),
+//       updated_ts = CURRENT_TIMESTAMP
+//     `,
+//     [
+//       loggerId,
+//       source,
+//       rawId,
+//       name,
+//       item.lat ?? null,
+//       item.lng ?? null
+//     ]
+//   );
+
+//   return loggerId;
+// }
+
 async function upsertLoggerPoint(db, item) {
   const loggerId = resolveLoggerId(item);
-  const source = item.source || "unknown";
+  const itemSource = item.source || "unknown";
   const rawId = resolveRawId(item);
   const name = item.name || String(rawId || loggerId).toUpperCase();
 
@@ -88,18 +122,19 @@ async function upsertLoggerPoint(db, item) {
     INSERT INTO logger_points (
       logger_id, source, raw_id, name, lat, lng, enabled
     )
-    VALUES (?, ?, ?, ?, ?, ?, 1)
+    VALUES ($1, $2, $3, $4, $5, $6, 1)
     ON CONFLICT(logger_id) DO UPDATE SET
-      source = excluded.source,
-      raw_id = excluded.raw_id,
-      name = COALESCE(excluded.name, logger_points.name),
-      lat = COALESCE(excluded.lat, logger_points.lat),
-      lng = COALESCE(excluded.lng, logger_points.lng),
+      source = EXCLUDED.source,
+      raw_id = EXCLUDED.raw_id,
+      name = COALESCE(EXCLUDED.name, logger_points.name),
+      lat = COALESCE(EXCLUDED.lat, logger_points.lat),
+      lng = COALESCE(EXCLUDED.lng, logger_points.lng),
+      enabled = 1,
       updated_ts = CURRENT_TIMESTAMP
     `,
     [
       loggerId,
-      source,
+      itemSource,
       rawId,
       name,
       item.lat ?? null,
