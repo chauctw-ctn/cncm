@@ -1,7 +1,7 @@
 "use strict";
 
-const sqlite3 = require("sqlite3").verbose();
 const path = require("path");
+const { openDb: openConfiguredDb } = require("./connection");
 
 const DEFAULT_DB_PATH = path.join(__dirname, "../../data/mysql.db");
 
@@ -26,7 +26,7 @@ const DEFAULT_TAG_META = {
 };
 
 function openDb(dbPath = DEFAULT_DB_PATH) {
-  return new sqlite3.Database(dbPath);
+  return openConfiguredDb(dbPath);
 }
 
 function run(db, sql, params = []) {

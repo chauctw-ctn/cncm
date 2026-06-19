@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "init-db": "node src/db/init.js",
+    "check-db": "node src/db/check.js",
     "render-start": "node src/db/init.js && node index.js"
   },
   "engines": {

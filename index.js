@@ -14,6 +14,7 @@ const ingestRoutes = require("./src/api/ingest.routes");
 const loggerApi = require("./src/api/logger");
 
 const { startAlertChecker } = require("./src/services/alert-checker");
+const { checkDbConnection, closePgPool } = require("./src/db/connection");
 
 const app = express();
 
@@ -172,20 +173,46 @@ app.use((req, res) => {
   res.sendFile(path.join(PUBLIC_DIR, "index.html"));
 });
 
-const server = app.listen(PORT, () => {
-  console.log(`[SERVER] http://localhost:${PORT}`);
+let services = null;
 
-  startServices();
-});
+async function startServer() {
+  try {
+    const db = await checkDbConnection();
+    console.log(`[DB] Connected: ${db.target}`);
+  } catch (err) {
+    console.error("[DB] Connection failed:", err.message || err);
+    process.exitCode = 1;
+    await closePgPool().catch(() => {});
+    return;
+  }
 
-function shutdown() {
-  console.log("[SERVER] Shutting down...");
+  const server = app.listen(PORT, () => {
+    console.log(`[SERVER] http://localhost:${PORT}`);
 
-  server.close(() => {
-    console.log("[SERVER] Closed");
-    process.exit(0);
+    services = startServices();
   });
+
+  function shutdown() {
+    console.log("[SERVER] Shutting down...");
+
+    if (services?.mqtt) {
+      services.mqtt.end(true);
+    }
+
+    for (const key of ["scada", "alertChecker"]) {
+      if (services?.[key]) clearInterval(services[key]);
+    }
+
+    closePgPool().catch(() => {});
+
+    server.close(() => {
+      console.log("[SERVER] Closed");
+      process.exit(0);
+    });
+  }
+
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
 }
 
-process.on("SIGINT", shutdown);
-process.on("SIGTERM", shutdown);
+startServer();

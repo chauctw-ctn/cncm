@@ -105,3 +105,4 @@ postgresql://postgres:[YOUR-PASSWORD]@db.uxykynfwfcpxwxfogjyq.supabase.co:5432/p
 Pass: CeFlksOPXBJs8yi8
 
 postgresql://postgres.uxykynfwfcpxwxfogjyq:CeFlksOPXBJs8yi8@aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres
+DATABASE_URL=postgresql://postgres.uxykynfwfcpxwxfogjyq:CeFlksOPXBJs8yi8@aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres
