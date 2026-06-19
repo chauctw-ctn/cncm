@@ -41,3 +41,19 @@ Y!4Kr#8Wp$6Hv@Nc
 6. Chất lượng nước: 
 cln@canthowassco.vn
 gP@3Lm&9Qx!7Ts#D
+
+git add .
+git comit -m "custom history.html"
+git push
+
+git pull origin main
+
+
+fix logger-map.html
+-tạo trang hiển thị các điểm logger trên map google với api key(tôi sẽ cập nhật api key)
+-sử dụng icon maker: shared/icon-offline.gif và icon-online.gif 
+-popup maker: hiển thị các thông tin logger
+
+
+
+DEVICE_API_KEY=123456

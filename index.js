@@ -9,6 +9,7 @@ const mqttClient = require("./src/sources/mqtt/client");
 const scadaClient = require("./src/sources/scada/client");
 const tvaClient = require("./src/sources/tva/client");
 const monreClient = require("./src/sources/monre/client");
+const ingestRoutes = require("./src/api/ingest.routes");
 
 const loggerApi = require("./src/api/logger");
 
@@ -22,6 +23,8 @@ const DB_PATH = path.join(__dirname, "data/mysql.db");
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
+app.use("/api/ingest", ingestRoutes);
+app.use("/api/logger", require("./src/api/logger"));
 app.use(express.static(PUBLIC_DIR));
 
 app.use("/api/logger", loggerApi);

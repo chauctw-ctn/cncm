@@ -3,57 +3,576 @@
 <head>
   <meta charset="UTF-8">
   <title>Logger Map</title>
+
   <link rel="stylesheet" href="/shared/layout.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
   <script src="/shared/auth.js"></script>
   <script src="/shared/layout.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    .map-toolbar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .map-toolbar input,
+    .map-toolbar select {
+      width: 220px;
+    }
+
+    .map-wrap {
+      height: calc(100vh - 210px);
+      min-height: 520px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #e5e7eb;
+      background: #f8fafc;
+      position: relative;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    .map-type-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background: white;
+      color: #0f172a;
+      cursor: pointer;
+      font-size: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    }
+
+    .map-type-control {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 900;
+    }
+
+    .map-type-menu {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: 48px;
+      width: 230px;
+      background: white;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+      overflow: hidden;
+    }
+
+    .map-type-menu.active {
+      display: block;
+    }
+
+    .map-type-item {
+      padding: 10px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 14px;
+    }
+
+    .map-type-item:hover,
+    .map-type-item.active {
+      background: #dbeafe;
+    }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-top: 8px;
+      color: #475569;
+      font-size: 13px;
+    }
+
+    .legend img {
+      width: 18px;
+      height: 18px;
+      vertical-align: middle;
+      margin-right: 4px;
+    }
+
+    .popup {
+      min-width: 280px;
+      max-width: 380px;
+      font-family: Arial, sans-serif;
+      color: #0f172a;
+    }
+
+    .popup h3 {
+      margin: 0 0 6px;
+      font-size: 16px;
+    }
+
+    .popup .meta {
+      color: #64748b;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .popup-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    .popup-table th,
+    .popup-table td {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 5px;
+      text-align: left;
+    }
+
+    .popup-table th {
+      background: #f8fafc;
+    }
+
+    .status-online {
+      color: #16a34a;
+      font-weight: bold;
+    }
+
+    .status-offline {
+      color: #dc2626;
+      font-weight: bold;
+    }
+  </style>
 </head>
 
 <body>
 <main class="page-content">
+
   <div class="card">
-    <h2>Logger Map</h2>
-    <button onclick="loadMap()">Tải dữ liệu</button>
+    <div class="map-toolbar">
+      <h2 style="margin-right:auto;">Logger Map</h2>
+
+      <input
+        id="searchText"
+        placeholder="Tìm logger / tên trạm / nguồn..."
+        oninput="renderMarkers()"
+      >
+
+      <select id="sourceFilter" onchange="renderMarkers()">
+        <option value="">Tất cả nguồn</option>
+        <option value="mqtt">mqtt</option>
+        <option value="scada">scada</option>
+        <option value="monre">monre</option>
+        <option value="tva">tva</option>
+      </select>
+
+      <select id="statusFilter" onchange="renderMarkers()">
+        <option value="">Tất cả trạng thái</option>
+        <option value="online">Online</option>
+        <option value="offline">Offline</option>
+      </select>
+
+      <button onclick="loadLoggerMap()">Tải lại</button>
+      <button class="gray" onclick="fitAllMarkers()">Fit map</button>
+    </div>
+
+    <div class="legend">
+      <span><img src="/shared/icon-online.gif">Online</span>
+      <span><img src="/shared/icon-offline.gif">Offline</span>
+      <span id="mapSummary">Chưa tải dữ liệu</span>
+      <span id="currentMapType">Map: Google Hybrid</span>
+    </div>
   </div>
 
   <div class="card">
-    <table>
-      <thead>
-        <tr>
-          <th>Logger</th>
-          <th>Nguồn</th>
-          <th>Toạ độ</th>
-          <th>Tags</th>
-        </tr>
-      </thead>
-      <tbody id="mapTable"></tbody>
-    </table>
+    <div class="map-wrap">
+      <div id="map"></div>
+
+      <div class="map-type-control">
+        <button class="map-type-btn" onclick="toggleMapTypeMenu()" title="Đổi loại bản đồ">🗺️</button>
+
+        <div id="mapTypeMenu" class="map-type-menu">
+          <div class="map-type-item" onclick="setBaseMap('googleHybrid')">Google Hybrid</div>
+          <div class="map-type-item" onclick="setBaseMap('googleRoadmap')">Google Roadmap</div>
+          <div class="map-type-item" onclick="setBaseMap('googleSatellite')">Google Satellite</div>
+          <div class="map-type-item" onclick="setBaseMap('googleTerrain')">Google Terrain</div>
+          <div class="map-type-item" onclick="setBaseMap('openStreetMap')">OpenStreetMap</div>
+          <div class="map-type-item" onclick="setBaseMap('cartoDBPositron')">Carto Light</div>
+          <div class="map-type-item" onclick="setBaseMap('cartoDBDark')">Carto Dark</div>
+          <div class="map-type-item" onclick="setBaseMap('cartoDBVoyager')">Carto Voyager</div>
+          <div class="map-type-item" onclick="setBaseMap('esriWorldImagery')">Esri Imagery</div>
+          <div class="map-type-item" onclick="setBaseMap('esriWorldStreetMap')">Esri Street</div>
+          <div class="map-type-item" onclick="setBaseMap('openTopoMap')">OpenTopoMap</div>
+        </div>
+      </div>
+    </div>
   </div>
+
 </main>
 
 <script>
 AppLayout.initLayout("Logger Map");
 
-async function loadMap() {
-  const res = await fetch("/api/logger/readings/map");
-  const json = await res.json();
+const GOOGLE_MAPS_API_KEY = "GOOGLE_MAPS_API_KEY_HERE";
 
-  if (!json.success) return alert("Lỗi tải dữ liệu");
+let map = null;
+let loggerData = [];
+let markers = [];
+let markerLayer = null;
+let currentBaseLayer = null;
+let currentBaseMapKey = "googleHybrid";
 
-  mapTable.innerHTML = json.data.map(l => `
-    <tr>
-      <td>${l.name || l.logger_id}<br><small>${l.logger_id}</small></td>
-      <td>${l.source}</td>
-      <td>${l.lat}, ${l.lng}</td>
-      <td>
-        ${Object.values(l.tags || {}).map(t =>
-          `<div><b>${t.tag_name || t.tag_key}</b>: ${t.value ?? "--"} ${t.unit || ""}</div>`
-        ).join("")}
-      </td>
-    </tr>
-  `).join("");
+const onlineIcon = L.icon({
+  iconUrl: "/shared/icon-online.gif",
+  iconSize: [30, 30],
+  iconAnchor: [15, 30],
+  popupAnchor: [0, -28]
+});
+
+const offlineIcon = L.icon({
+  iconUrl: "/shared/icon-offline.gif",
+  iconSize: [30, 30],
+  iconAnchor: [15, 30],
+  popupAnchor: [0, -28]
+});
+
+const baseLayers = {
+  openStreetMap: {
+    name: "OpenStreetMap",
+    layer: L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 19
+    })
+  },
+
+  cartoDBPositron: {
+    name: "Carto Light",
+    layer: L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+      subdomains: "abcd",
+      maxZoom: 20
+    })
+  },
+
+  cartoDBDark: {
+    name: "Carto Dark",
+    layer: L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+      subdomains: "abcd",
+      maxZoom: 20
+    })
+  },
+
+  cartoDBVoyager: {
+    name: "Carto Voyager",
+    layer: L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+      subdomains: "abcd",
+      maxZoom: 20
+    })
+  },
+
+  esriWorldImagery: {
+    name: "Esri Imagery",
+    layer: L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+      attribution: "Tiles &copy; Esri",
+      maxZoom: 19
+    })
+  },
+
+  openTopoMap: {
+    name: "OpenTopoMap",
+    layer: L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {
+      attribution: "Map data &copy; OpenStreetMap contributors",
+      maxZoom: 17
+    })
+  },
+
+  esriWorldStreetMap: {
+    name: "Esri Street",
+    layer: L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
+      attribution: "Tiles &copy; Esri",
+      maxZoom: 19
+    })
+  },
+
+  googleRoadmap: {
+    name: "Google Roadmap",
+    layer: L.tileLayer("https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&key=" + GOOGLE_MAPS_API_KEY, {
+      attribution: "&copy; Google Maps",
+      maxZoom: 20
+    })
+  },
+
+  googleSatellite: {
+    name: "Google Satellite",
+    layer: L.tileLayer("https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}&key=" + GOOGLE_MAPS_API_KEY, {
+      attribution: "&copy; Google Maps",
+      maxZoom: 20
+    })
+  },
+
+  googleHybrid: {
+    name: "Google Hybrid",
+    layer: L.tileLayer("https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}&key=" + GOOGLE_MAPS_API_KEY, {
+      attribution: "&copy; Google Maps",
+      maxZoom: 20
+    })
+  },
+
+  googleTerrain: {
+    name: "Google Terrain",
+    layer: L.tileLayer("https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}&key=" + GOOGLE_MAPS_API_KEY, {
+      attribution: "&copy; Google Maps",
+      maxZoom: 20
+    })
+  }
+};
+
+function initMap() {
+  map = L.map("map", {
+    center: [9.18, 105.16],
+    zoom: 12,
+    zoomControl: true
+  });
+
+  markerLayer = L.layerGroup().addTo(map);
+
+  setBaseMap("googleHybrid");
+  loadLoggerMap();
 }
 
-loadMap();
+function toggleMapTypeMenu() {
+  mapTypeMenu.classList.toggle("active");
+}
+
+document.addEventListener("click", function (e) {
+  if (!e.target.closest(".map-type-control")) {
+    mapTypeMenu.classList.remove("active");
+  }
+});
+
+function setBaseMap(key) {
+  if (!baseLayers[key]) return;
+
+  if (currentBaseLayer) {
+    map.removeLayer(currentBaseLayer);
+  }
+
+  currentBaseMapKey = key;
+  currentBaseLayer = baseLayers[key].layer;
+  currentBaseLayer.addTo(map);
+
+  currentMapType.textContent = `Map: ${baseLayers[key].name}`;
+  mapTypeMenu.classList.remove("active");
+
+  document.querySelectorAll(".map-type-item").forEach(item => {
+    item.classList.remove("active");
+    if (item.textContent.trim() === baseLayers[key].name) {
+      item.classList.add("active");
+    }
+  });
+}
+
+async function api(url) {
+  const res = await fetch(url, { cache: "no-store" });
+  const text = await res.text();
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {
+      success: false,
+      message: "API không trả JSON",
+      preview: text.slice(0, 300)
+    };
+  }
+}
+
+async function loadLoggerMap() {
+  const json = await api("/api/logger/readings/map");
+
+  if (!json.success) {
+    mapSummary.textContent = "Lỗi tải dữ liệu logger map";
+    return;
+  }
+
+  loggerData = json.data || [];
+  renderMarkers();
+}
+
+function renderMarkers() {
+  if (!map || !markerLayer) return;
+
+  markerLayer.clearLayers();
+  markers = [];
+
+  const keyword = searchText.value.trim().toLowerCase();
+  const source = sourceFilter.value;
+  const status = statusFilter.value;
+
+  const filtered = loggerData.filter(logger => {
+    if (!isValidLatLng(logger)) return false;
+
+    const online = isLoggerOnline(logger);
+
+    if (source && logger.source !== source) return false;
+    if (status === "online" && !online) return false;
+    if (status === "offline" && online) return false;
+
+    if (keyword) {
+      const text = [
+        logger.logger_id,
+        logger.raw_id,
+        logger.name,
+        logger.source
+      ].join(" ").toLowerCase();
+
+      if (!text.includes(keyword)) return false;
+    }
+
+    return true;
+  });
+
+  filtered.forEach(logger => {
+    const online = isLoggerOnline(logger);
+
+    const marker = L.marker(
+      [Number(logger.lat), Number(logger.lng)],
+      {
+        icon: online ? onlineIcon : offlineIcon,
+        title: logger.name || logger.logger_id
+      }
+    );
+
+    marker.bindPopup(buildPopupHtml(logger, online), {
+      maxWidth: 420
+    });
+
+    marker.addTo(markerLayer);
+    markers.push(marker);
+  });
+
+  mapSummary.textContent =
+    `Hiển thị ${filtered.length}/${loggerData.length} logger`;
+
+  if (filtered.length) {
+    fitAllMarkers();
+  }
+}
+
+function fitAllMarkers() {
+  if (!markers.length) return;
+
+  const group = L.featureGroup(markers);
+  map.fitBounds(group.getBounds(), {
+    padding: [40, 40],
+    maxZoom: 15
+  });
+}
+
+function isValidLatLng(logger) {
+  return (
+    logger &&
+    logger.lat !== null &&
+    logger.lng !== null &&
+    logger.lat !== undefined &&
+    logger.lng !== undefined &&
+    Number.isFinite(Number(logger.lat)) &&
+    Number.isFinite(Number(logger.lng))
+  );
+}
+
+function isLoggerOnline(logger) {
+  if (Number(logger.enabled) === 0) return false;
+
+  const tags = Object.values(logger.tags || {});
+  if (!tags.length) return false;
+
+  const latestTs = tags
+    .map(t => t.data_ts)
+    .filter(Boolean)
+    .sort()
+    .pop();
+
+  if (!latestTs) return false;
+
+  const ts = new Date(String(latestTs).replace(" ", "T"));
+  if (Number.isNaN(ts.getTime())) return false;
+
+  const diffMs = Date.now() - ts.getTime();
+  return diffMs <= 30 * 60 * 1000;
+}
+
+function buildPopupHtml(logger, online) {
+  const tags = Object.values(logger.tags || {});
+
+  const tagRows = tags.length
+    ? tags.map(tag => `
+      <tr>
+        <td>${escapeHtml(tag.tag_name || tag.tag_key)}</td>
+        <td><b>${formatNumber(tag.value)}</b> ${escapeHtml(tag.unit || "")}</td>
+        <td>${escapeHtml(tag.data_ts || "")}</td>
+      </tr>
+    `).join("")
+    : `<tr><td colspan="3">Chưa có tag/data</td></tr>`;
+
+  return `
+    <div class="popup">
+      <h3>${escapeHtml(logger.name || logger.logger_id)}</h3>
+
+      <div class="meta">
+        <b>Logger ID:</b> ${escapeHtml(logger.logger_id)}<br>
+        <b>Raw ID:</b> ${escapeHtml(logger.raw_id || "")}<br>
+        <b>Nguồn:</b> ${escapeHtml(logger.source || "")}<br>
+        <b>Toạ độ:</b> ${escapeHtml(logger.lat)}, ${escapeHtml(logger.lng)}<br>
+        <b>Trạng thái:</b>
+        <span class="${online ? "status-online" : "status-offline"}">
+          ${online ? "Online" : "Offline"}
+        </span>
+      </div>
+
+      <table class="popup-table">
+        <thead>
+          <tr>
+            <th>Tag</th>
+            <th>Giá trị</th>
+            <th>Thời gian</th>
+          </tr>
+        </thead>
+        <tbody>${tagRows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function formatNumber(value) {
+  if (value === null || value === undefined || value === "") return "--";
+
+  const n = Number(value);
+  if (Number.isNaN(n)) return value;
+
+  return new Intl.NumberFormat("vi-VN", {
+    maximumFractionDigits: 3
+  }).format(n);
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+initMap();
 </script>
 </body>
 </html>
