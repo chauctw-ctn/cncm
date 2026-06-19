@@ -3,10 +3,10 @@
   --sidebar-width: 250px;
   --sidebar-collapsed-width: 72px;
   --bg: #f4f6f9;
-  --primary: #0f172a;
-  --primary-2: #1e293b;
+  --primary: #2196f3;
+  --primary-2: #2196f3;
   --border: #e5e7eb;
-  --text: #1f2937;
+  --text: #f4f6f9;
 }
 
 * {
@@ -18,7 +18,6 @@ body {
   font-family: Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
-  /* overflow-y: hidden; */
 }
 
 .app-header {
@@ -30,7 +29,7 @@ body {
   padding: 0 18px;
   position: fixed;
   inset: 0 0 auto 0;
-  z-index: 10;
+  z-index: 1000;
 }
 
 .header-title {
@@ -74,12 +73,13 @@ body {
   height: calc(100vh - var(--header-height));
   background: var(--primary-2);
   color: white;
-  transition: width 0.2s ease;
   overflow: hidden;
+  transition: transform 0.25s ease, width 0.25s ease;
+  z-index: 900;
 }
 
-body.sidebar-collapsed .app-sidebar {
-  width: var(--sidebar-collapsed-width);
+body.sidebar-hidden .app-sidebar {
+  transform: translateX(-100%);
 }
 
 .sidebar-menu {
@@ -109,19 +109,15 @@ body.sidebar-collapsed .app-sidebar {
   flex: 0 0 24px;
 }
 
-body.sidebar-collapsed .sidebar-text {
-  display: none;
-}
-
 .page-content {
   margin-left: var(--sidebar-width);
-  padding: calc(var(--header-height) + 0px) 0px 0px;
-  transition: margin-left 0.2s ease;
-  min-height: 100vh;  
+  padding-top: var(--header-height);
+  transition: margin-left 0.25s ease;
+  min-height: 100vh;
 }
 
-body.sidebar-collapsed .page-content {
-  margin-left: var(--sidebar-collapsed-width);
+body.sidebar-hidden .page-content {
+  margin-left: 0;
 }
 
 .card {
@@ -179,4 +175,39 @@ td {
 
 th {
   background: #f8fafc;
+}
+
+
+/* CSS CHO LOGO SIDEBAR */
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  min-height: 80px;
+}
+
+.sidebar-logo img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #fff;
+  padding: 4px;
+}
+
+.sidebar-logo-text {
+  color: #fff;
+  overflow: hidden;
+}
+
+.sidebar-logo-text div {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.sidebar-logo-text small {
+  color: #cbd5e1;
+  font-size: 12px;
 }

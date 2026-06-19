@@ -68,15 +68,3 @@
     overflow: visible !important;
 }
 
-/* Khắc phục triệt để lỗi lệch chữ text/tspan trong mặt kim đo tròn */
-/* .scada-gauge svg text {
-    font-family: 'Segoe UI', sans-serif !important;
-    text-anchor: middle !important;
-    dominant-baseline: central !important;
-}
-
-.scada-gauge svg tspan {
-    text-anchor: middle !important;
-    dominant-baseline: central !important;
-    white-space: nowrap !important;
-} */
