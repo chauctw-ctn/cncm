@@ -262,44 +262,415 @@
       visibility: visible !important;
       opacity: 1 !important;
     }
+
+    /* ===== FIX FULL SCREEN - NO VERTICAL PAGE SCROLL ===== */
+    html,
+    body {
+      height: 100%;
+      overflow: hidden !important;
+    }
+
+    body {
+      margin: 0;
+    }
+
+    .page-content {
+      height: calc(100vh - var(--header-height, 70px)) !important;
+      overflow: hidden !important;
+      padding: 12px !important;
+      box-sizing: border-box !important;
+      background: #eef2f7;
+    }
+
+    .dashboard-grid {
+      height: 100% !important;
+      display: grid !important;
+      grid-template-rows: 34% 32% 34% !important;
+      grid-template-columns: 1fr !important;
+      gap: 10px !important;
+      overflow: hidden !important;
+    }
+
+    .card {
+      min-height: 0 !important;
+      overflow: hidden !important;
+      border-radius: 14px !important;
+      padding: 12px !important;
+      box-sizing: border-box !important;
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, .06) !important;
+    }
+
+    .card h3 {
+      margin: 0 0 8px 0 !important;
+      font-size: 16px !important;
+      color: #0f172a !important;
+    }
+
+    .kpi-gauge-header {
+      height: 34px !important;
+      margin-bottom: 6px !important;
+    }
+
+    .kpi-gauge-header label {
+      font-size: 12px !important;
+      margin-right: 6px !important;
+    }
+
+    .kpi-gauge-header select {
+      height: 30px !important;
+      width: 150px !important;
+    }
+
+    #kpiGauges {
+      height: calc(100% - 40px) !important;
+      min-height: 0 !important;
+      display: grid !important;
+      grid-template-columns: repeat(var(--kpi-count, 4), minmax(130px, 1fr)) !important;
+      gap: 8px !important;
+      overflow: hidden !important;
+    }
+
+    #kpiGauges .gauge-item {
+      height: 100% !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
+      border-radius: 12px !important;
+      background: #f8fafc !important;
+      border: 1px solid #e2e8f0 !important;
+    }
+
+    #kpiGauges .scada-gauge,
+    #kpiGauges .scada-gauge-container,
+    #kpiGauges .gauge-item > div {
+      height: 100% !important;
+      min-height: 0 !important;
+      width: 100% !important;
+    }
+
+    #kpiGauges svg {
+      width: 100% !important;
+      height: 100% !important;
+      max-height: 100% !important;
+    }
+
+    .kpi-toolbar {
+      height: 34px !important;
+      margin-bottom: 6px !important;
+      gap: 6px !important;
+      overflow: hidden !important;
+      flex-wrap: nowrap !important;
+    }
+
+    .kpi-toolbar label {
+      font-size: 12px !important;
+      white-space: nowrap !important;
+    }
+
+    .kpi-toolbar input,
+    .kpi-toolbar select,
+    .kpi-toolbar button,
+    .multi-select-btn {
+      height: 30px !important;
+      font-size: 12px !important;
+      padding: 4px 8px !important;
+      box-sizing: border-box !important;
+    }
+
+    .kpi-toolbar input,
+    .kpi-toolbar select {
+      width: 145px !important;
+    }
+
+    .multi-select {
+      width: 180px !important;
+      flex: 0 0 180px !important;
+    }
+
+    .chart-wrap {
+      height: calc(100% - 74px) !important;
+      min-height: 0 !important;
+    }
+
+    .alarm-table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+      font-size: 12px !important;
+    }
+
+    .alarm-table th,
+    .alarm-table td {
+      padding: 6px 8px !important;
+    }
+
+    .card:last-child {
+      overflow: hidden !important;
+    }
+
+    .card:last-child table {
+      display: table !important;
+    }
+
+    .card:last-child {
+      position: relative !important;
+    }
+
+    #alarmTable {
+      overflow: hidden !important;
+    }
+
+    @media (max-width: 1200px) {
+      .dashboard-grid {
+        grid-template-rows: 38% 31% 31% !important;
+      }
+
+      #kpiGauges {
+        grid-template-columns: repeat(2, minmax(140px, 1fr)) !important;
+      }
+    }
+
+
+    /* ===== LAYOUT MỚI: GAUGE TRÊN, CHART | CẢNH BÁO DƯỚI ===== */
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden !important;
+    }
+
+    .page-content {
+      height: calc(100vh - var(--header-height, 70px)) !important;
+      overflow: hidden !important;
+      padding: 12px !important;
+      box-sizing: border-box !important;
+      background: #eef2f7 !important;
+    }
+
+    .dashboard-grid {
+      height: 100% !important;
+      min-height: 0 !important;
+      display: grid !important;
+      grid-template-rows: minmax(245px, 42%) minmax(0, 58%) !important;
+      grid-template-columns: 1fr !important;
+      gap: 12px !important;
+      overflow: hidden !important;
+    }
+
+    .bottom-grid {
+      /* height: 100% !important;
+      min-height: 0 !important;
+      display: grid !important;
+      grid-template-columns: minmax(0, 1.35fr) minmax(360px, .65fr) !important;
+      gap: 12px !important;
+      overflow: hidden !important; */
+      height: 100% !important;
+      min-height: 0 !important;
+      display: grid !important;
+      /* Chia đều 2 cột */
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 12px !important;
+      overflow: hidden !important;
+    }
+
+    .card {
+      min-height: 0 !important;
+      overflow: hidden !important;
+      border-radius: 14px !important;
+      padding: 12px !important;
+      box-sizing: border-box !important;
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: 0 4px 16px rgba(15, 23, 42, .06) !important;
+    }
+
+    .card h3 {
+      margin: 0 0 8px 0 !important;
+      font-size: 16px !important;
+      line-height: 1.2 !important;
+      color: #0f172a !important;
+    }
+
+    .kpi-gauge-header {
+      height: 34px !important;
+      margin-bottom: 8px !important;
+    }
+
+    .kpi-gauge-header label {
+      font-size: 12px !important;
+      margin-right: 6px !important;
+    }
+
+    .kpi-gauge-header select {
+      height: 30px !important;
+      width: 155px !important;
+    }
+
+    #kpiGauges {
+      height: calc(100% - 42px) !important;
+      min-height: 0 !important;
+      display: grid !important;
+      grid-template-columns: repeat(var(--kpi-count, 4), minmax(130px, 1fr)) !important;
+      gap: 10px !important;
+      overflow: hidden !important;
+    }
+
+    #kpiGauges .gauge-item {
+      height: 100% !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
+      border-radius: 12px !important;
+      background: #f8fafc !important;
+      border: 1px solid #e2e8f0 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+
+    #kpiGauges .gauge-item > div,
+    #kpiGauges .scada-gauge,
+    #kpiGauges .scada-gauge-container {
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 0 !important;
+    }
+
+    #kpiGauges svg {
+      width: 100% !important;
+      height: 100% !important;
+      max-height: 100% !important;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    .chart-card,
+    .alarm-card {
+      height: 100% !important;
+      min-height: 0 !important;
+    }
+
+    .kpi-toolbar {
+      min-height: 32px !important;
+      max-height: 68px !important;
+      margin-bottom: 8px !important;
+      gap: 6px !important;
+      overflow: hidden !important;
+      flex-wrap: wrap !important;
+      align-items: center !important;
+    }
+
+    .kpi-toolbar label {
+      font-size: 12px !important;
+      white-space: nowrap !important;
+    }
+
+    .kpi-toolbar input,
+    .kpi-toolbar select,
+    .kpi-toolbar button,
+    .multi-select-btn {
+      height: 28px !important;
+      font-size: 12px !important;
+      padding: 3px 8px !important;
+      box-sizing: border-box !important;
+    }
+
+    .kpi-toolbar input,
+    .kpi-toolbar select {
+      width: 135px !important;
+    }
+
+    .multi-select {
+      width: 170px !important;
+      flex: 0 0 170px !important;
+    }
+
+    .multi-select-list {
+      max-height: 220px !important;
+    }
+
+    .chart-wrap {
+      height: calc(100% - 106px) !important;
+      min-height: 0 !important;
+      width: 100% !important;
+    }
+
+    .alarm-card > button {
+      height: 28px !important;
+      font-size: 12px !important;
+      padding: 3px 10px !important;
+      margin-bottom: 8px !important;
+    }
+
+    .alarm-card br {
+      display: none !important;
+    }
+
+    .alarm-card {
+      display: flex !important;
+      flex-direction: column !important;
+    }
+
+    .alarm-table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+      font-size: 12px !important;
+      table-layout: fixed !important;
+    }
+
+    .alarm-table thead {
+      display: table !important;
+      width: 100% !important;
+      table-layout: fixed !important;
+    }
+
+    .alarm-table tbody {
+      display: block !important;
+      height: calc(100% - 78px) !important;
+      overflow: hidden !important;
+      width: 100% !important;
+    }
+
+    .alarm-table tbody tr {
+      display: table !important;
+      width: 100% !important;
+      table-layout: fixed !important;
+    }
+
+    .alarm-table th,
+    .alarm-table td {
+      padding: 6px 6px !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap !important;
+    }
+
+    .alarm-table th {
+      background: #0f172a !important;
+      color: #ffffff !important;
+      font-weight: 600 !important;
+    }
+
+    @media (max-width: 1200px) {
+      .dashboard-grid {
+        grid-template-rows: 45% 55% !important;
+      }
+
+      .bottom-grid {
+        grid-template-columns: 1fr 1fr !important;
+      }
+
+      #kpiGauges {
+        grid-template-columns: repeat(2, minmax(140px, 1fr)) !important;
+      }
+    }
+
   </style>
 </head>
 
 <body>
 <main class="page-content">
   <div class="dashboard-grid">
-
-    <div class="card">
-      <h2>Dashboard</h2>
-      <p>Xin chào <b id="welcomeUser"></b></p>
-
-      <div class="summary-row">
-        <div class="summary-box">
-          Tổng logger
-          <b id="totalLoggers">--</b>
-        </div>
-
-        <div class="summary-box">
-          Tổng KPI
-          <b id="totalKpis">--</b>
-        </div>
-
-        <div class="summary-box">
-          Cảnh báo đang vi phạm
-          <b id="totalAlarms">--</b>
-        </div>
-
-        <div class="summary-box">
-          Server
-          <b id="serverStatus">--</b>
-        </div>
-      </div>
-    </div>
-
-    <!-- <div class="card">
-      <h3>KPI Gauge</h3>
-      <div id="kpiGauges" class="gauge-section dashboard-gauge-section"></div>
-    </div> -->
     <div class="card">
       <div class="kpi-gauge-header">
         <h3>KPI Gauge</h3>
@@ -319,7 +690,8 @@
       <div id="kpiGauges" class="gauge-section dashboard-gauge-section"></div>
     </div>
 
-    <div class="card">
+    <div class="bottom-grid">
+    <div class="card chart-card">
       <h3>Biểu đồ toàn bộ KPI theo thời gian</h3>
 
       <div class="kpi-toolbar">
@@ -358,7 +730,7 @@
       </div>
     </div>
 
-    <div class="card">
+    <div class="card alarm-card">
       <h3>Logger / Tag đang vi phạm cảnh báo</h3>
 
       <button onclick="loadActiveAlarms()">Tải cảnh báo</button>
@@ -385,6 +757,7 @@
         </tbody>
       </table>
     </div>
+    </div>
 
   </div>
 </main>
@@ -393,7 +766,11 @@
 AppLayout.initLayout("Dashboard");
 
 const currentUser = Auth.getCurrentUser();
-welcomeUser.textContent = currentUser.fullname || currentUser.username;
+
+const welcomeUserEl = document.getElementById("welcomeUser");
+if (welcomeUserEl && currentUser) {
+  welcomeUserEl.textContent = currentUser.fullname || currentUser.username || "";
+}
 
 let kpiConfigs = [];
 let kpiChart = null;
@@ -517,7 +894,10 @@ async function loadKpiConfigs() {
   }
 
   kpiConfigs = listJson.data || [];
-  totalKpis.textContent = kpiConfigs.length;
+  const totalKpisEl = document.getElementById("totalKpis");
+  if (totalKpisEl) {
+    totalKpisEl.textContent = kpiConfigs.length;
+  }
 
   chartKpiCheckList.innerHTML = kpiConfigs.map(kpi => `
     <label>
@@ -601,6 +981,7 @@ async function loadKpiGauges() {
 
   kpiGaugeObjects = [];
   kpiGauges.innerHTML = "";
+  kpiGauges.style.setProperty("--kpi-count", Math.max(kpiConfigs.length, 1));
 
   if (!kpiConfigs.length) {
     kpiGauges.innerHTML = `<div class="empty-text">Chưa có KPI. Vào Settings → KPI Config để thêm KPI.</div>`;
@@ -790,7 +1171,10 @@ async function loadActiveAlarms() {
 
   if (!json.success) return;
 
-  totalAlarms.textContent = json.total ?? json.data.length;
+  const totalAlarmsEl = document.getElementById("totalAlarms");
+  if (totalAlarmsEl) {
+    totalAlarmsEl.textContent = json.total ?? json.data.length;
+  }
 
   if (!json.data.length) {
     alarmTable.innerHTML = `
@@ -833,7 +1217,6 @@ async function initDashboard() {
   await loadKpiConfigs();
 
   await Promise.all([
-    loadDashboardSummary(),
     loadKpiGauges(),
     loadActiveAlarms()
   ]);
@@ -843,7 +1226,6 @@ async function initDashboard() {
 
 initDashboard();
 
-setInterval(loadDashboardSummary, 30000);
 setInterval(loadKpiGauges, 60000);
 setInterval(loadActiveAlarms, 15000);
 </script>
