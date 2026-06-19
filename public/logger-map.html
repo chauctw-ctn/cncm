@@ -148,6 +148,30 @@
       color: #dc2626;
       font-weight: bold;
     }
+    .logger-label {
+      background: rgba(255,255,255,0.95);
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      color: #0f172a;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      white-space: nowrap;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logger-label.online {
+      border-color: #16a34a;
+    }
+
+    .logger-label.offline {
+      border-color: #dc2626;
+      color: #dc2626;
+    }
   </style>
 </head>
 
@@ -442,12 +466,23 @@ function renderMarkers() {
 
   filtered.forEach(logger => {
     const online = isLoggerOnline(logger);
-
     const marker = L.marker(
       [Number(logger.lat), Number(logger.lng)],
       {
         icon: online ? onlineIcon : offlineIcon,
         title: logger.name || logger.logger_id
+      }
+    );
+
+    marker.bindTooltip(
+      logger.name || logger.logger_id,      
+      {
+        permanent: true,
+        direction: "center",
+        offset: [0, 11],
+        // 18  → khoảng cách ngang giữa marker và label
+        // 0   → canh giữa theo chiều dọc
+        className: `logger-label ${online ? "online" : "offline"}`
       }
     );
 

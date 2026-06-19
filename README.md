@@ -56,4 +56,52 @@ fix logger-map.html
 -popup maker: hiển thị các thông tin logger
 
 
+Test API bằng PowerShell
 
+$body = @{
+  api_key = "123456"
+  source = "device"
+  raw_id = "g45"
+  logger_id = "device_g45"
+  name = "Logger G45"
+  lat = 9.1835
+  lng = 105.152611
+  ts = "2026-06-19 10:20:00"
+  tags = @{
+    flow = @{
+      value = 30
+      unit = "m³/h"
+      tag_name = "Lưu lượng"
+    }
+    level = @{
+      value = 31.5
+      unit = "m"
+      tag_name = "Mực nước"
+    }
+    totalIndex = @{
+      value = 535209
+      unit = "m³"
+      tag_name = "Tổng lưu lượng"
+    }
+  }
+} | ConvertTo-Json -Depth 10
+
+Invoke-RestMethod `
+  -Uri "http://localhost:3000/api/ingest/logger" `
+  -Method POST `
+  -ContentType "application/json" `
+  -Body $body
+
+  Test trên Render
+  Invoke-RestMethod `
+  -Uri "https://cncm-oguh.onrender.com/api/ingest/logger" `
+  -Method POST `
+  -ContentType "application/json" `
+  -Body $body
+
+
+
+postgresql://postgres:[YOUR-PASSWORD]@db.uxykynfwfcpxwxfogjyq.supabase.co:5432/postgres
+Pass: CeFlksOPXBJs8yi8
+
+postgresql://postgres.uxykynfwfcpxwxfogjyq:CeFlksOPXBJs8yi8@aws-1-ap-southeast-2.pooler.supabase.com:6543/postgres
