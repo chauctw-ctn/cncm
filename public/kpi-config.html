@@ -1,152 +1,105 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Cấu hình KPI</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cấu hình KPI</title>
 
-  <link rel="stylesheet" href="/shared/layout.css">
-  <script src="/shared/auth.js"></script>
-  <script src="/shared/layout.js"></script>
+<link rel="stylesheet" href="/shared/layout.css">
+<link rel="stylesheet" href="/kpi-config.css">
 
-  <style>
-    .config-grid {
-      display: grid;
-      grid-template-columns: 360px 1fr;
-      gap: 16px;
-    }
-
-    .form-grid-2 {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-    }
-
-    .check-panel {
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      background: #f8fafc;
-      max-height: 260px;
-      overflow: auto;
-      padding: 8px;
-    }
-
-    .check-panel label {
-      display: block;
-      padding: 4px;
-      font-size: 13px;
-    }
-
-    .check-panel input {
-      width: auto;
-      margin-right: 6px;
-    }
-
-    .kpi-item {
-      padding: 10px;
-      border-bottom: 1px solid #e5e7eb;
-      cursor: pointer;
-    }
-
-    .kpi-item:hover,
-    .kpi-item.active {
-      background: #e0f2fe;
-    }
-
-    pre {
-      background: #111827;
-      color: #d1fae5;
-      border-radius: 8px;
-      padding: 12px;
-      max-height: 360px;
-      overflow: auto;
-    }
-  </style>
+<script src="/shared/auth.js"></script>
+<script src="/shared/layout.js"></script>
 </head>
 
 <body>
+<script>AppLayout.initLayout("Cấu hình KPI");</script>
+
 <main class="page-content">
-  <div class="card">
-    <h2>Cấu hình KPI</h2>
-    <button onclick="loadAll()">Tải lại</button>
-    <button class="gray" onclick="clearForm()">Tạo mới</button>
+  
+  <div class="water-title-card">
+    <div class="logger-toolbar">
+      <h2 style="margin-right:auto;">CẤU HÌNH KPI HỆ THỐNG</h2>
+      <button onclick="loadAll()">Tải lại dữ liệu</button>
+      <button class="gray" style="font-size:12px; padding:6px 14px; margin:0;" onclick="clearForm()">+ Tạo mới KPI</button>
+    </div>
   </div>
 
   <div class="config-grid">
-    <div class="card">
-      <h3>Danh sách KPI</h3>
-      <div id="kpiList"></div>
+    
+    <div class="scada-card">
+      <h3>Danh sách KPI cấu hình</h3>
+      <div id="kpiList" class="kpi-items-wrap">
+         <div class="muted" style="padding:10px;">Đang tải danh sách...</div>
+      </div>
     </div>
 
-    <div>
-      <div class="card">
-        <h3>Thêm / Sửa KPI</h3>
-
+    <div class="scada-card">
+      <h3>Cài đặt & Đồng bộ chỉ số KPI</h3>
+      
+      <div class="form-scroll-container">
         <div class="form-grid-2">
           <div>
-            <label>KPI ID</label>
+            <label>Mã KPI ID</label>
             <input id="kpi_id" placeholder="kpi_flow_main">
           </div>
-
           <div>
-            <label>Tên KPI</label>
+            <label>Tên hiển thị KPI</label>
             <input id="kpi_name" placeholder="Tổng lưu lượng hiện tại">
           </div>
-
           <div>
-            <label>Loại KPI</label>
+            <label>Phân loại nhóm KPI</label>
             <select id="kpi_type" onchange="onKpiTypeChange()">
-              <option value="kpi-flow">kpi-flow: Lưu lượng</option>
-              <option value="kpi-total">kpi-total: TotalIndex</option>
+              <option value="kpi-flow">kpi-flow: Lưu lượng nước real-time</option>
+              <option value="kpi-total">kpi-total: Sản lượng tích lũy TotalIndex</option>
             </select>
           </div>
-
           <div>
-            <label>Max gauge</label>
-            <input id="max_value" type="number" placeholder="Ví dụ 5000">
+            <label>Ngưỡng cao nhất (Max gauge)</label>
+            <input id="max_value" type="number" placeholder="Ví dụ: 5000">
           </div>
-
-          <div>
-            <label>Trạng thái</label>
+          <div style="grid-column: span 2;">
+            <label>Trạng thái đồng bộ</label>
             <select id="enabled">
-              <option value="1">Bật</option>
-              <option value="0">Tắt</option>
+              <option value="1">Kích hoạt hoạt động (Active)</option>
+              <option value="0">Tạm ngưng liên kết (Disable)</option>
             </select>
           </div>
         </div>
 
-        <h4>Chọn chỉ số hiển thị</h4>
+        <h4>Chọn chu kỳ chỉ số hiển thị tích hợp</h4>
         <div class="check-panel">
-          <label><input type="checkbox" class="metric-check" value="current" checked> Hiện tại</label>
-          <label><input type="checkbox" class="metric-check" value="today" checked> Ngày hiện tại</label>
-          <label><input type="checkbox" class="metric-check" value="yesterday" checked> Ngày trước</label>
-          <label><input type="checkbox" class="metric-check" value="this_month" checked> Tháng hiện tại</label>
-          <label><input type="checkbox" class="metric-check" value="last_month" checked> Tháng trước</label>
+          <label><input type="checkbox" class="metric-check" value="current" checked> Số liệu tức thời (Hiện tại)</label>
+          <label><input type="checkbox" class="metric-check" value="today" checked> Tổng ngày hiện tại (Hôm nay)</label>
+          <label><input type="checkbox" class="metric-check" value="yesterday" checked> Tổng ngày hôm trước (Hôm qua)</label>
+          <label><input type="checkbox" class="metric-check" value="this_month" checked> Tổng lũy kế tháng này (Tháng hiện tại)</label>
+          <label><input type="checkbox" class="metric-check" value="last_month" checked> Tổng lũy kế tháng trước (Tháng qua)</label>
         </div>
 
-        <h4>Chọn logger id</h4>
-        <button class="gray" onclick="checkAllLoggers(true)">Chọn tất cả</button>
-        <button class="gray" onclick="checkAllLoggers(false)">Bỏ chọn</button>
+        <h4>Liên kết danh sách Logger Trạm</h4>
+        <div style="display:flex; gap:6px; margin-bottom:4px;">
+           <button class="gray" onclick="checkAllLoggers(true)">Chọn tất cả</button>
+           <button class="gray" onclick="checkAllLoggers(false)">Bỏ chọn toàn bộ</button>
+        </div>
+        <div id="loggerCheckList" class="check-panel" style="max-height: 160px;">
+           <div class="muted" style="padding:4px;">Đang tải danh mục logger...</div>
+        </div>
 
-        <div id="loggerCheckList" class="check-panel"></div>
+        <div class="card-actions" style="margin-top:14px; display:flex; gap:6px;">
+          <button onclick="saveKpi()">Lưu cấu hình KPI</button>
+          <button class="danger" onclick="deleteKpi()">Xoá KPI</button>
+        </div>
 
-        <br>
-
-        <button onclick="saveKpi()">Lưu KPI</button>
-        <button class="danger" onclick="deleteKpi()">Xoá KPI</button>
+        <h3 style="margin-top:16px; border:none; padding:0;">Xem trước giá trị KPI (Preview Panel)</h3>
+        <button style="margin-bottom:6px; background:#64748b;" onclick="previewKpi()">Truy vấn giá trị tức thời</button>
+        <pre id="output">Chưa nạp bản tin truy vấn</pre>
       </div>
 
-      <div class="card">
-        <h3>Preview KPI Value</h3>
-        <button onclick="previewKpi()">Xem giá trị KPI</button>
-        <pre id="output">Chưa có dữ liệu</pre>
-      </div>
     </div>
   </div>
 </main>
 
 <script>
-AppLayout.initLayout("Cấu hình KPI");
-
 let kpiConfigs = [];
 let loggers = [];
 let selectedKpiId = null;
@@ -156,24 +109,14 @@ function show(data) {
 }
 
 async function api(url, options = {}) {
-  const res = await fetch(url, {
-    cache: "no-store",
-    ...options
-  });
-
+  const res = await fetch(url, { cache: "no-store", ...options });
   const text = await res.text();
-
   try {
     const json = JSON.parse(text);
     show(json);
     return json;
   } catch {
-    const json = {
-      success: false,
-      message: "API không trả JSON",
-      url,
-      preview: text.slice(0, 200)
-    };
+    const json = { success: false, message: "API không trả JSON", url, preview: text.slice(0, 200) };
     show(json);
     return json;
   }
@@ -188,23 +131,19 @@ async function loadAll() {
 
 async function loadLoggers() {
   const json = await api("/api/logger/readings/map");
-
   if (!json.success) return;
 
   loggers = json.data || [];
-
   loggerCheckList.innerHTML = loggers.map(logger => `
     <label>
       <input type="checkbox" class="logger-check" value="${escapeHtml(logger.logger_id)}">
-      ${escapeHtml(logger.name || logger.logger_id)}
-      <small>(${escapeHtml(logger.logger_id)})</small>
+      <span><b>${escapeHtml(logger.name || logger.logger_id)}</b> <small style="color:var(--water-muted);">(${escapeHtml(logger.logger_id)})</small></span>
     </label>
   `).join("");
 }
 
 async function loadKpis() {
   const json = await api("/api/logger/kpis");
-
   if (!json.success) return;
 
   kpiConfigs = json.data || [];
@@ -213,25 +152,21 @@ async function loadKpis() {
 
 function renderKpiList() {
   if (!kpiConfigs.length) {
-    kpiList.innerHTML = "<i>Chưa có KPI</i>";
+    kpiList.innerHTML = "<div class='muted' style='padding:10px;'><i>Chưa có KPI nào được cấu hình</i></div>";
     return;
   }
 
   kpiList.innerHTML = kpiConfigs.map(kpi => `
-    <div
-      class="kpi-item ${selectedKpiId === kpi.kpi_id ? "active" : ""}"
-      onclick="selectKpi('${escapeJs(kpi.kpi_id)}')"
-    >
-      <b>${escapeHtml(kpi.name || kpi.kpi_id)}</b><br>
-      <small>${escapeHtml(kpi.kpi_id)} | ${escapeHtml(kpi.kpi_type)}</small><br>
-      <small>Logger: ${(kpi.logger_ids || []).length}</small>
+    <div class="kpi-item ${selectedKpiId === kpi.kpi_id ? "active" : ""}" onclick="selectKpi('${escapeJs(kpi.kpi_id)}')">
+      <div style="font-weight:700; font-size:13px; color:var(--water-text);">${escapeHtml(kpi.name || kpi.kpi_id)}</div>
+      <div class="logger-meta" style="color:var(--primary-blue); font-weight:600; margin-top:2px;">Mã: ${escapeHtml(kpi.kpi_id)} &bull; ${escapeHtml(kpi.kpi_type)}</div>
+      <div class="logger-meta" style="color:#94a3b8;">Số trạm liên kết: ${(kpi.logger_ids || []).length} trạm</div>
     </div>
   `).join("");
 }
 
 function selectKpi(kpiId) {
   selectedKpiId = kpiId;
-
   const kpi = kpiConfigs.find(x => x.kpi_id === kpiId);
   if (!kpi) return;
 
@@ -257,7 +192,6 @@ function selectKpi(kpiId) {
 
 function clearForm() {
   selectedKpiId = null;
-
   kpi_id.value = "";
   kpi_id.readOnly = false;
   kpi_name.value = "";
@@ -267,7 +201,6 @@ function clearForm() {
 
   document.querySelectorAll(".metric-check").forEach(cb => cb.checked = true);
   document.querySelectorAll(".logger-check").forEach(cb => cb.checked = false);
-
   renderKpiList();
 }
 
@@ -286,13 +219,11 @@ function onKpiTypeChange() {
 }
 
 function getCheckedLoggers() {
-  return Array.from(document.querySelectorAll(".logger-check:checked"))
-    .map(cb => cb.value);
+  return Array.from(document.querySelectorAll(".logger-check:checked")).map(cb => cb.value);
 }
 
 function getCheckedMetrics() {
-  return Array.from(document.querySelectorAll(".metric-check:checked"))
-    .map(cb => cb.value);
+  return Array.from(document.querySelectorAll(".metric-check:checked")).map(cb => cb.value);
 }
 
 function checkAllLoggers(value) {
@@ -310,26 +241,15 @@ async function saveKpi() {
     enabled: Number(enabled.value)
   };
 
-  if (!body.kpi_id) {
-    alert("Chưa nhập KPI ID");
-    return;
-  }
-
-  if (!body.logger_ids.length) {
-    alert("Chưa chọn logger id");
-    return;
-  }
+  if (!body.kpi_id) { alert("Chưa nhập KPI ID"); return; }
+  if (!body.logger_ids.length) { alert("Vui lòng tích chọn tối thiểu một logger trạm liên kết"); return; }
 
   const method = selectedKpiId ? "PUT" : "POST";
-  const url = selectedKpiId
-    ? `/api/logger/kpis/${encodeURIComponent(selectedKpiId)}`
-    : "/api/logger/kpis";
+  const url = selectedKpiId ? `/api/logger/kpis/${encodeURIComponent(selectedKpiId)}` : "/api/logger/kpis";
 
   const json = await api(url, {
     method,
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body)
   });
 
@@ -341,18 +261,10 @@ async function saveKpi() {
 
 async function deleteKpi() {
   const id = selectedKpiId || kpi_id.value.trim();
+  if (!id) { alert("Chưa chọn mục mục KPI để xóa"); return; }
+  if (!confirm(`Xác nhận xóa hoàn toàn mục chỉ số KPI cấu hình ${id}?`)) return;
 
-  if (!id) {
-    alert("Chưa chọn KPI");
-    return;
-  }
-
-  if (!confirm(`Xoá KPI ${id}?`)) return;
-
-  const json = await api(`/api/logger/kpis/${encodeURIComponent(id)}`, {
-    method: "DELETE"
-  });
-
+  const json = await api(`/api/logger/kpis/${encodeURIComponent(id)}`, { method: "DELETE" });
   if (json.success) {
     clearForm();
     await loadKpis();
@@ -361,28 +273,16 @@ async function deleteKpi() {
 
 async function previewKpi() {
   const id = selectedKpiId || kpi_id.value.trim();
-
-  if (!id) {
-    alert("Chưa chọn KPI");
-    return;
-  }
-
+  if (!id) { alert("Vui lòng lựa chọn một mục chỉ số KPI từ danh sách bên trái để chạy preview"); return; }
   await api(`/api/logger/kpis/${encodeURIComponent(id)}/value`);
 }
 
 function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+  return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
 }
 
 function escapeJs(value) {
-  return String(value ?? "")
-    .replaceAll("\\", "\\\\")
-    .replaceAll("'", "\\'");
+  return String(value ?? "").replaceAll("\\", "\\\\").replaceAll("'", "\\'");
 }
 
 loadAll();

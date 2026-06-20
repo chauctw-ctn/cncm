@@ -1,261 +1,201 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Settings</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cài đặt hệ thống</title>
 
-  <link rel="stylesheet" href="/shared/layout.css">
+<link rel="stylesheet" href="/shared/layout.css">
+<link rel="stylesheet" href="/settings.css">
 
-  <script src="/shared/auth.js"></script>
-  <script src="/shared/layout.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
 
-  <style>
-    .setting-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-    }
-
-    .full-width {
-      grid-column: 1 / -1;
-    }
-
-    label {
-      display: block;
-      font-weight: bold;
-      margin-bottom: 6px;
-    }
-
-    pre {
-      background: #111827;
-      color: #d1fae5;
-      padding: 12px;
-      border-radius: 8px;
-      overflow: auto;
-      max-height: 420px;
-    }
-
-    .help-box {
-      background: #f8fafc;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      padding: 12px;
-      margin-top: 12px;
-    }
-
-    .status-ok {
-      color: #16a34a;
-      font-weight: bold;
-    }
-
-    .status-error {
-      color: #dc2626;
-      font-weight: bold;
-    }
-  </style>
+<script src="/shared/auth.js"></script>
+<script src="/shared/layout.js"></script>
 </head>
 
 <body>
+<script>AppLayout.initLayout("Settings");</script>
+
 <main class="page-content">
 
-  <div class="card">
-    <h2>Settings</h2>
-
-    <button onclick="location.href='/logger-config.html'">
-      Cấu hình Logger / Tags
-    </button>
-
-    <button onclick="location.href='/kpi-config.html'">
-      Cấu hình KPI / History / Threshold
-    </button>
-  </div>
-
-  <div class="card" id="userManageCard">
-    <h3>Quản lý người dùng</h3>
-
-    <div class="form-grid">
-      <input id="username" placeholder="Username">
-      <input id="password" placeholder="Password">
-      <input id="fullname" placeholder="Họ tên">
-
-      <select id="role">
-        <option value="admin">Admin</option>
-        <option value="user">User</option>
-      </select>
-    </div>
-
-    <br>
-
-    <button onclick="saveUser()">Lưu User</button>
-    <button class="gray" onclick="clearUserForm()">Làm mới</button>
-
-    <br><br>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Username</th>
-          <th>Họ tên</th>
-          <th>Role</th>
-          <th>Trạng thái</th>
-          <th>Thao tác</th>
-        </tr>
-      </thead>
-
-      <tbody id="userTable"></tbody>
-    </table>
-  </div>
-
-  <div class="card" id="telegramCard">
-    <h3>Cấu hình Telegram cảnh báo</h3>
-
-    <div class="setting-grid">
-      <div>
-        <label>Bật/Tắt Telegram</label>
-        <select id="telegram_enabled">
-          <option value="1">Bật Telegram</option>
-          <option value="0">Tắt Telegram</option>
-        </select>
-      </div>
-
-      <div>
-        <label>Cooldown phút</label>
-        <input
-          id="telegram_cooldown_minutes"
-          type="number"
-          placeholder="Cooldown phút"
-          value="10"
-        >
-      </div>
-
-      <div class="full-width">
-        <label>Telegram Bot Token</label>
-        <input
-          id="telegram_bot_token"
-          placeholder="Ví dụ: 123456789:ABCDEF..."
-        >
-      </div>
-
-      <div class="full-width">
-        <label>Telegram Chat ID</label>
-        <input
-          id="telegram_chat_id"
-          placeholder="Ví dụ: -1001234567890 hoặc 123456789"
-        >
-      </div>
-    </div>
-
-    <br>
-
-    <button onclick="saveTelegramSettings()">Lưu Telegram</button>
-    <button onclick="testTelegram()">Gửi test Telegram</button>
-    <button class="gray" onclick="loadTelegramSettings()">Tải cấu hình</button>
-
-    <div class="help-box">
-      <h4>Hướng dẫn lấy Telegram Bot Token / Chat ID</h4>
-      <ol>
-        <li>Vào Telegram, tìm <b>@BotFather</b>.</li>
-        <li>Tạo bot mới bằng lệnh <b>/newbot</b>.</li>
-        <li>Copy <b>Bot Token</b> đưa vào ô Telegram Bot Token.</li>
-        <li>Nhắn một tin bất kỳ vào bot vừa tạo.</li>
-        <li>Mở trình duyệt với link:</li>
-      </ol>
-
-      <pre>https://api.telegram.org/botBOT_TOKEN/getUpdates</pre>
-
-      <p>Tìm trường:</p>
-
-      <pre>chat.id</pre>
+  <div class="water-title-card">
+    <h2>HỆ THỐNG CÀI ĐẶT TRẠM GIÁM SÁT SCADA</h2>
+    <div class="nav-buttons">
+      <button onclick="location.href='/logger-config.html'">+ Cấu hình Logger / Tags</button>
+      <button class="gray" onclick="location.href='/kpi-config.html'">&Rarr; Cấu hình KPI / Ngưỡng</button>
     </div>
   </div>
 
-  <div class="card">
-    <h3>Trạng thái hệ thống</h3>
+  <div class="settings-main-layout">
 
-    <button onclick="checkHealth()">Kiểm tra server</button>
-    <button onclick="loadThresholds()">Kiểm tra ngưỡng cảnh báo</button>
+    <div class="settings-column">
+      
+      <div class="scada-card" id="userManageCard">
+        <h3>Quản lý người dùng</h3>
+        <div class="setting-grid">
+          <div>
+            <label>Tên đăng nhập (Username)</label>
+            <input id="username" placeholder="Mã tài khoản..">
+          </div>
+          <div>
+            <label>Mật khẩu (Password)</label>
+            <input id="password" type="password" placeholder="******">
+          </div>
+          <div>
+            <label>Họ và tên</label>
+            <input id="fullname" placeholder="Họ tên hiển thị..">
+          </div>
+          <div>
+            <label>Vai trò hệ thống</label>
+            <select id="role">
+              <option value="admin">Quản trị viên (Admin)</option>
+              <option value="user">Nhân viên (User)</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-actions">
+          <button onclick="saveUser()">Lưu người dùng</button>
+          <button class="gray" onclick="clearUserForm()">Làm mới</button>
+        </div>
 
-    <div id="healthStatus"></div>
-  </div>
-
-  <div class="card">
-    <h3>Response</h3>
-    <pre id="output">Chưa kiểm tra</pre>
-  </div>
-
-  <!-- Cấu hình cảnh báo tag -->
-  <div class="card" id="thresholdCard">
-    <h3>Cài đặt ngưỡng cảnh báo theo tag</h3>
-
-    <div class="setting-grid">
-      <div>
-        <label>Lọc logger</label>
-        <select id="threshold_filter_logger" onchange="renderThresholdAllTagsTable()">
-          <option value="">Tất cả logger</option>
-        </select>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Họ tên</th>
+                <th>Quyền</th>
+                <th>Trạng thái</th>
+                <th style="width:130px; text-align:center;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="userTable"></tbody>
+          </table>
+        </div>
       </div>
 
-      <div>
-        <label>Lọc tag</label>
-        <select id="threshold_filter_tag" onchange="renderThresholdAllTagsTable()">
-          <option value="">Tất cả tag</option>
-          <option value="flow">flow</option>
-          <option value="level">level</option>
-          <option value="totalIndex">totalIndex</option>
-          <option value="pH">pH</option>
-          <option value="TDS">TDS</option>
-          <option value="amino">amino</option>
-          <option value="nitrat">nitrat</option>
-        </select>
+      <div class="scada-card" id="telegramCard">
+        <h3>Cấu hình Telegram nhận cảnh báo sự cố</h3>
+        <div class="setting-grid">
+          <div>
+            <label>Trạng thái kích hoạt</label>
+            <select id="telegram_enabled">
+              <option value="1">Bật thông báo</option>
+              <option value="0">Tắt thông báo</option>
+            </select>
+          </div>
+          <div>
+            <label>Thời gian Cooldown (phút)</label>
+            <input id="telegram_cooldown_minutes" type="number" value="10">
+          </div>
+          <div class="full-width">
+            <label>Telegram Bot Token API</label>
+            <input id="telegram_bot_token" placeholder="Mã token bot...">
+          </div>
+          <div class="full-width">
+            <label>Telegram Chat ID nhận tin</label>
+            <input id="telegram_chat_id" placeholder="Mã nhóm chat hoặc ID cá nhân...">
+          </div>
+        </div>
+        <div class="card-actions">
+          <button onclick="saveTelegramSettings()">Lưu cấu hình</button>
+          <button class="gray" onclick="testTelegram()">Gửi tin kiểm thử</button>
+          <button class="gray" onclick="loadTelegramSettings()">Tải lại dữ liệu</button>
+        </div>
+
+        <div class="help-box">
+          <h4>Hướng dẫn lấy Telegram Bot Token / Chat ID nhanh:</h4>
+          <ol>
+            <li>Tìm kiếm từ khóa <b>@BotFather</b> trên thanh Telegram.</li>
+            <li>Gửi lệnh <b>/newbot</b> và đặt tên theo hướng dẫn để khởi tạo Bot.</li>
+            <li>Sao chép chuỗi mã <b>Bot Token</b> dán vào ô cấu hình phía trên.</li>
+            <li>Tạo nhóm, thêm Bot vào và truy cập link sau để tìm <code>chat.id</code>:</li>
+          </ol>
+          <pre>https://api.telegram.org/botBOT_TOKEN/getUpdates</pre>
+        </div>
       </div>
+
+      <div class="scada-card">
+        <h3>Trạng thái & Kiểm tra máy chủ</h3>
+        <div class="card-actions" style="margin-top:0;">
+          <button onclick="checkHealth()">Kiểm tra kết nối Server</button>
+          <button class="gray" onclick="loadThresholds()">Kiểm tra đồng bộ ngưỡng</button>
+        </div>
+        <div id="healthStatus"></div>
+      </div>
+
+      <div class="scada-card">
+        <h3>Nhật ký phản hồi API (Response Log)</h3>
+        <pre id="output">Hệ thống sẵn sàng</pre>
+      </div>
+
     </div>
 
-    <br>
+    <div class="scada-card" id="thresholdCard" style="height:100%;">
+      <h3>Cài đặt ngưỡng giới hạn cảnh báo theo danh mục thẻ Tags</h3>
+      <p class="muted">Thiết lập biên độ an toàn trên dải đo. Vượt ngưỡng này hệ thống sẽ tự động bắn tin nhắn cảnh báo.</p>
 
-    <button onclick="loadThresholdAllTags()">Tải toàn bộ tag</button>
+      <div class="setting-grid" style="margin-bottom:12px; flex:0 0 auto;">
+        <div>
+          <label>Bộ lọc lọc theo trạm Logger</label>
+          <select id="threshold_filter_logger" onchange="renderThresholdAllTagsTable()">
+            <option value="">Tất cả logger trạm</option>
+          </select>
+        </div>
+        <div>
+          <label>Bộ lọc lọc theo thông số thẻ Tag</label>
+          <select id="threshold_filter_tag" onchange="renderThresholdAllTagsTable()">
+            <option value="">Tất cả thông số tags</option>
+            <option value="flow">flow (Lưu lượng)</option>
+            <option value="level">level (Mực nước)</option>
+            <option value="totalIndex">totalIndex (Tổng số)</option>
+            <option value="pH">pH (Độ kiềm)</option>
+            <option value="TDS">TDS (Tổng chất rắn hòa tan)</option>
+            <option value="amino">amino (Hàm lượng chất hữu cơ)</option>
+            <option value="nitrat">nitrat (Hàm lượng muối độc)</option>
+          </select>
+        </div>
+      </div>
 
-    <br><br>
+      <button style="margin-bottom:12px; align-self: flex-start; flex:0 0 auto;" onclick="loadThresholdAllTags()">Tải mới toàn bộ danh sách</button>
 
-    <table>
-      <thead>
-        <tr>
-          <th>Logger</th>
-          <th>Tag</th>
-          <th>Giá trị hiện tại</th>
-          <th>Đơn vị</th>
-          <th>Min</th>
-          <th>Max</th>
-          <th>Bật</th>
-          <th>Thao tác</th>
-        </tr>
-      </thead>
-      <tbody id="thresholdAllTagsTable"></tbody>
-    </table>
-  </div>    
-  <!-- Cấu hình cảnh báo tag -->
-   
+      <div class="threshold-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Trạm Logger</th>
+              <th>Thẻ Thông số</th>
+              <th>Giá trị hiện tại</th>
+              <th>Đơn vị</th>
+              <th style="width:110px;">Ngưỡng Dưới (Min)</th>
+              <th style="width:110px;">Ngưỡng Trên (Max)</th>
+              <th style="width:80px;">Trạng thái</th>
+              <th style="width:110px; text-align:center;">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="thresholdAllTagsTable">
+            <tr><td colspan="8" style="text-align:center; padding:20px; color:var(--water-muted);">Bấm nút phía trên để nạp dữ liệu lưới cảnh báo</td></tr>
+          </tbody>
+        </table>
+      </div>
 
+    </div>
+
+  </div>
 </main>
 
 <script>
 AppLayout.initLayout("Settings");
 
 const currentUser = Auth.getCurrentUser();
-
-const isAdmin =
-  currentUser &&
-  currentUser.role === "admin";
+const isAdmin = currentUser && currentUser.role === "admin";
 
 if (!isAdmin) {
-  userManageCard.innerHTML = `
-    <h3>Quản lý người dùng</h3>
-    <p>Bạn không có quyền quản lý người dùng.</p>
-  `;
-
-  telegramCard.innerHTML = `
-    <h3>Cấu hình Telegram cảnh báo</h3>
-    <p>Bạn không có quyền sửa cấu hình Telegram.</p>
-  `;
+  userManageCard.innerHTML = `<h3>Quản lý người dùng</h3><p class='muted' style='color:red;'>Tài khoản của bạn không có quyền Quản trị để thay đổi nhân sự.</p>`;
+  telegramCard.innerHTML = `<h3>Cấu hình Telegram cảnh báo</h3><p class='muted' style='color:red;'>Vui lòng liên hệ Admin cấp cao để sửa đổi thông tin Token cấu hình bảo mật.</p>`;
 }
 
 function show(data) {
@@ -269,49 +209,33 @@ async function api(url, options = {}) {
     show(json);
     return json;
   } catch (err) {
-    const json = {
-      success: false,
-      message: err.message
-    };
+    const json = { success: false, message: err.message };
     show(json);
     return json;
   }
 }
 
 /* ================= USER MANAGEMENT ================= */
-
 function loadUsers() {
   if (!isAdmin) return;
-
   const users = Auth.getUsers();
 
   userTable.innerHTML = users.map(u => `
     <tr>
-      <td>${escapeHtml(u.username)}</td>
-      <td>${escapeHtml(u.fullname || "")}</td>
-      <td>${escapeHtml(u.role || "user")}</td>
-      <td>${u.enabled === false ? "Tắt" : "Bật"}</td>
-      <td>
+      <td><b>${escapeHtml(u.username)}</b></td>
+      <td>${escapeHtml(u.fullname || "-")}</td>
+      <td><span style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:600;">${escapeHtml(u.role || "user")}</span></td>
+      <td>${u.enabled === false ? "<span style='color:red;'>Khóa</span>" : "<span style='color:green;'>Hoạt động</span>"}</td>
+      <td style="text-align:center; display:flex; gap:3px; justify-content:center;">
         <button onclick="editUser('${escapeJs(u.username)}')">Sửa</button>
-
-        <button class="gray" onclick="toggleUser('${escapeJs(u.username)}')">
-          ${u.enabled === false ? "Bật" : "Tắt"}
-        </button>
-
-        <button class="danger" onclick="deleteUser('${escapeJs(u.username)}')">
-          Xoá
-        </button>
+        <button class="gray" onclick="toggleUser('${escapeJs(u.username)}')">${u.enabled === false ? "Mở" : "Khóa"}</button>
+        <button class="danger" onclick="deleteUser('${escapeJs(u.username)}')">Xoá</button>
       </td>
-    </tr>
-  `).join("");
+    </tr>`).join("");
 }
 
 function saveUser() {
-  if (!isAdmin) {
-    alert("Chỉ Admin mới được quản lý người dùng");
-    return;
-  }
-
+  if (!isAdmin) { alert("Chỉ Admin mới được quản lý người dùng"); return; }
   const users = Auth.getUsers();
 
   const data = {
@@ -322,18 +246,11 @@ function saveUser() {
     enabled: true
   };
 
-  if (!data.username || !data.password) {
-    alert("Chưa nhập username hoặc password");
-    return;
-  }
-
+  if (!data.username || !data.password) { alert("Chưa nhập username hoặc password"); return; }
   const index = users.findIndex(u => u.username === data.username);
 
   if (index >= 0) {
-    users[index] = {
-      ...users[index],
-      ...data
-    };
+    users[index] = { ...users[index], ...data };
   } else {
     users.push(data);
   }
@@ -345,7 +262,6 @@ function saveUser() {
 
 function editUser(userName) {
   if (!isAdmin) return;
-
   const user = Auth.getUsers().find(u => u.username === userName);
   if (!user) return;
 
@@ -353,69 +269,45 @@ function editUser(userName) {
   password.value = user.password;
   fullname.value = user.fullname || "";
   role.value = user.role || "user";
-
   username.readOnly = true;
 }
 
 function toggleUser(userName) {
   if (!isAdmin) return;
-
   const users = Auth.getUsers();
   const user = users.find(u => u.username === userName);
 
   if (!user) return;
-
-  if (user.username === currentUser.username) {
-    alert("Không thể tự tắt tài khoản đang đăng nhập");
-    return;
-  }
+  if (user.username === currentUser.username) { alert("Không thể tự tắt tài khoản đang đăng nhập"); return; }
 
   user.enabled = user.enabled === false ? true : false;
-
   Auth.saveUsers(users);
   loadUsers();
 }
 
 function deleteUser(userName) {
   if (!isAdmin) return;
-
-  if (userName === "admin") {
-    alert("Không xoá tài khoản admin mặc định");
-    return;
-  }
-
-  if (userName === currentUser.username) {
-    alert("Không thể xoá tài khoản đang đăng nhập");
-    return;
-  }
-
+  if (userName === "admin") { alert("Không xoá tài khoản admin mặc định"); return; }
+  if (userName === currentUser.username) { alert("Không thể xoá tài khoản đang đăng nhập"); return; }
   if (!confirm(`Xoá user ${userName}?`)) return;
 
   const users = Auth.getUsers().filter(u => u.username !== userName);
-
   Auth.saveUsers(users);
   loadUsers();
 }
 
 function clearUserForm() {
-  username.value = "";
-  password.value = "";
-  fullname.value = "";
-  role.value = "user";
+  username.value = ""; password.value = ""; fullname.value = ""; role.value = "user";
   username.readOnly = false;
 }
 
 /* ================= TELEGRAM ================= */
-
 async function loadTelegramSettings() {
   if (!isAdmin) return;
-
   const json = await api("/api/logger/settings");
-
   if (!json.success) return;
 
   const data = json.data || {};
-
   telegram_enabled.value = data.telegram_enabled || "0";
   telegram_bot_token.value = data.telegram_bot_token || "";
   telegram_chat_id.value = data.telegram_chat_id || "";
@@ -423,11 +315,7 @@ async function loadTelegramSettings() {
 }
 
 async function saveTelegramSettings() {
-  if (!isAdmin) {
-    alert("Chỉ Admin mới được sửa cấu hình Telegram");
-    return;
-  }
-
+  if (!isAdmin) { alert("Chỉ Admin mới được sửa cấu hình Telegram"); return; }
   const body = {
     telegram_enabled: telegram_enabled.value,
     telegram_bot_token: telegram_bot_token.value.trim(),
@@ -437,183 +325,27 @@ async function saveTelegramSettings() {
 
   await api("/api/logger/settings", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body)
   });
 }
 
 async function testTelegram() {
-  if (!isAdmin) {
-    alert("Chỉ Admin mới được test Telegram");
-    return;
-  }
-
-  await api("/api/logger/settings/telegram/test", {
-    method: "POST"
-  });
+  if (!isAdmin) { alert("Chỉ Admin mới được test Telegram"); return; }
+  await api("/api/logger/settings/telegram/test", { method: "POST" });
 }
 
-/* ================= SYSTEM ================= */
-
+/* ================= SYSTEM HEALTH ================= */
 async function checkHealth() {
   const json = await api("/api/health");
-
   if (json.success) {
-    healthStatus.innerHTML = `<p class="status-ok">API OK</p>`;
+    healthStatus.innerHTML = `<p class="status-ok">&check; Kết nối API Server thành công: Hoạt động bình thường</p>`;
   } else {
-    healthStatus.innerHTML = `<p class="status-error">API lỗi</p>`;
+    healthStatus.innerHTML = `<p class="status-error">&times; Mất kết nối Server. Vui lòng kiểm tra lại dịch vụ</p>`;
   }
 }
 
-async function loadThresholds() {
-  await api("/api/logger/thresholds");
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function escapeJs(value) {
-  return String(value)
-    .replaceAll("\\", "\\\\")
-    .replaceAll("'", "\\'");
-}
-
-if (isAdmin) {
-  loadUsers();
-  loadTelegramSettings();
-  loadThresholdAllTags();
-}
-
-
-// Scritp cho cấu hình cảnh báo tag
-async function loadThresholdLoggers() {
-  if (!isAdmin) return;
-
-  const json = await api("/api/logger/readings/map");
-  if (!json.success) return;
-
-  threshold_logger_id.innerHTML = `<option value="">-- Chọn logger --</option>`;
-
-  json.data.forEach(logger => {
-    const opt = document.createElement("option");
-    opt.value = logger.logger_id;
-    opt.textContent = `${logger.name || logger.logger_id} (${logger.logger_id})`;
-    threshold_logger_id.appendChild(opt);
-  });
-}
-
-async function loadThresholdTags() {
-  const loggerId = threshold_logger_id.value;
-
-  threshold_tag_key.innerHTML = `<option value="">-- Chọn tag --</option>`;
-
-  if (!loggerId) return;
-
-  const json = await api(`/api/logger/tags/${encodeURIComponent(loggerId)}`);
-  if (!json.success) return;
-
-  json.data.forEach(tag => {
-    const opt = document.createElement("option");
-    opt.value = tag.tag_key;
-    opt.textContent = `${tag.tag_name || tag.tag_key} (${tag.tag_key})`;
-    threshold_tag_key.appendChild(opt);
-  });
-}
-
-function nullableNumber(value) {
-  if (value === "" || value === null || value === undefined) return null;
-  const n = Number(value);
-  return Number.isNaN(n) ? null : n;
-}
-
-async function saveThreshold() {
-  if (!isAdmin) {
-    alert("Chỉ Admin mới được sửa ngưỡng cảnh báo");
-    thresholdCard.innerHTML = `
-      <h3>Cài đặt ngưỡng cảnh báo theo tag</h3>
-      <p>Bạn không có quyền sửa ngưỡng cảnh báo.</p>
-    `;
-    return;
-  }
-
-  if (!threshold_logger_id.value) {
-    alert("Chưa chọn logger");
-    return;
-  }
-
-  if (!threshold_tag_key.value) {
-    alert("Chưa chọn tag");
-    return;
-  }
-
-  const body = {
-    logger_id: threshold_logger_id.value,
-    tag_key: threshold_tag_key.value,
-    min_value: nullableNumber(threshold_min.value),
-    max_value: nullableNumber(threshold_max.value),
-    warning_enabled: Number(threshold_enabled.value),
-    message: threshold_message.value
-  };
-
-  await api("/api/logger/thresholds", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(body)
-  });
-
-  await loadThresholds();
-}
-
-async function loadThresholds() {
-  const json = await api("/api/logger/thresholds");
-
-  if (!json.success) return;
-
-  thresholdTable.innerHTML = json.data.map(row => `
-    <tr>
-      <td>${escapeHtml(row.logger_name || row.logger_id || "")}</td>
-      <td>${escapeHtml(row.tag_name || row.tag_key || "")}</td>
-      <td>${row.min_value ?? ""}</td>
-      <td>${row.max_value ?? ""}</td>
-      <td>${row.value ?? ""} ${escapeHtml(row.unit || "")}</td>
-      <td>${escapeHtml(row.status || "")}</td>
-    </tr>
-  `).join("");
-}
-
-async function deleteThreshold() {
-  if (!isAdmin) {
-    alert("Chỉ Admin mới được xoá ngưỡng cảnh báo");
-    return;
-  }
-
-  if (!threshold_logger_id.value || !threshold_tag_key.value) {
-    alert("Chưa chọn logger hoặc tag");
-    return;
-  }
-
-  if (!confirm(`Xoá ngưỡng ${threshold_logger_id.value}/${threshold_tag_key.value}?`)) {
-    return;
-  }
-
-  await api(
-    `/api/logger/thresholds/${encodeURIComponent(threshold_logger_id.value)}/${encodeURIComponent(threshold_tag_key.value)}`,
-    { method: "DELETE" }
-  );
-
-  await loadThresholds();
-}
-
+/* ================= THRESHOLD MANAGEMENT ================= */
 let thresholdLoggerData = [];
 let thresholdConfigMap = {};
 
@@ -621,7 +353,7 @@ async function loadThresholdAllTags() {
   if (!isAdmin) return;
 
   const [mapJson, thresholdJson] = await Promise.all([
-    api("/api/logger/readings/map"),
+    api("/api/readings/map" ? "/api/readings/map" : "/api/logger/readings/map"),
     api("/api/logger/thresholds")
   ]);
 
@@ -642,8 +374,7 @@ async function loadThresholdAllTags() {
 
 function renderThresholdLoggerFilter() {
   const current = threshold_filter_logger.value;
-
-  threshold_filter_logger.innerHTML = `<option value="">Tất cả logger</option>`;
+  threshold_filter_logger.innerHTML = `<option value="">Tất cả logger trạm</option>`;
 
   thresholdLoggerData.forEach(logger => {
     const opt = document.createElement("option");
@@ -651,14 +382,12 @@ function renderThresholdLoggerFilter() {
     opt.textContent = `${logger.name || logger.logger_id} (${logger.logger_id})`;
     threshold_filter_logger.appendChild(opt);
   });
-
   threshold_filter_logger.value = current;
 }
 
 function renderThresholdAllTagsTable() {
   const filterLogger = threshold_filter_logger.value;
   const filterTag = threshold_filter_tag.value;
-
   const rows = [];
 
   thresholdLoggerData.forEach(logger => {
@@ -687,123 +416,63 @@ function renderThresholdAllTagsTable() {
   });
 
   if (!rows.length) {
-    thresholdAllTagsTable.innerHTML = `
-      <tr>
-        <td colspan="8"><i>Không có tag</i></td>
-      </tr>
-    `;
+    thresholdAllTagsTable.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:15px;"><i>Không tìm thấy cấu hình thẻ tag nào trùng khớp</i></td></tr>`;
     return;
   }
 
   thresholdAllTagsTable.innerHTML = rows.map(row => {
     const safeKey = makeThresholdSafeKey(row.logger_id, row.tag_key);
-
     return `
       <tr>
+        <td><b>${escapeHtml(row.logger_name)}</b><br><small style="color:var(--water-muted);">${escapeHtml(row.logger_id)}</small></td>
+        <td><b>${escapeHtml(row.tag_name)}</b><br><small style="color:var(--water-muted);">${escapeHtml(row.tag_key)}</small></td>
+        <td><b style="color:var(--primary-blue); font-size:13px;">${row.value ?? "--"}</b><br><small style="color:#94a3b8;">${escapeHtml(row.data_ts)}</small></td>
+        <td><span style="color:var(--water-muted); font-weight:600;">${escapeHtml(row.unit)}</span></td>
+        <td><input id="threshold_min_${safeKey}" type="number" value="${row.min_value}" placeholder="Min"></td>
+        <td><input id="threshold_max_${safeKey}" type="number" value="${row.max_value}" placeholder="Max"></td>
         <td>
-          <b>${escapeHtml(row.logger_name)}</b><br>
-          <small>${escapeHtml(row.logger_id)}</small>
-        </td>
-
-        <td>
-          <b>${escapeHtml(row.tag_name)}</b><br>
-          <small>${escapeHtml(row.tag_key)}</small>
-        </td>
-
-        <td>
-          ${row.value ?? "--"}<br>
-          <small>${escapeHtml(row.data_ts)}</small>
-        </td>
-
-        <td>${escapeHtml(row.unit)}</td>
-
-        <td>
-          <input
-            id="threshold_min_${safeKey}"
-            type="number"
-            value="${row.min_value}"
-            placeholder="Min"
-            style="width:100px"
-          >
-        </td>
-
-        <td>
-          <input
-            id="threshold_max_${safeKey}"
-            type="number"
-            value="${row.max_value}"
-            placeholder="Max"
-            style="width:100px"
-          >
-        </td>
-
-        <td>
-          <select id="threshold_enabled_${safeKey}" style="width:90px">
+          <select id="threshold_enabled_${safeKey}">
             <option value="1" ${Number(row.warning_enabled) === 1 ? "selected" : ""}>Bật</option>
             <option value="0" ${Number(row.warning_enabled) === 0 ? "selected" : ""}>Tắt</option>
           </select>
         </td>
-
-        <td>
-          <button onclick="saveThresholdRow('${escapeJs(row.logger_id)}','${escapeJs(row.tag_key)}','${safeKey}')">
-            Lưu
-          </button>
-
-          <button class="danger" onclick="deleteThresholdRow('${escapeJs(row.logger_id)}','${escapeJs(row.tag_key)}')">
-            Xoá
-          </button>
+        <td style="text-align:center; display:flex; gap:3px;">
+          <button onclick="saveThresholdRow('${escapeJs(row.logger_id)}','${escapeJs(row.tag_key)}','${safeKey}')">Lưu</button>
+          <button class="danger" onclick="deleteThresholdRow('${escapeJs(row.logger_id)}','${escapeJs(row.tag_key)}')">Xoá</button>
         </td>
-      </tr>
-    `;
+      </tr>`;
   }).join("");
 }
 
 async function saveThresholdRow(loggerId, tagKey, safeKey) {
-  if (!isAdmin) {
-    alert("Chỉ Admin mới được sửa ngưỡng");
-    return;
-  }
-
+  if (!isAdmin) { alert("Chỉ Admin mới được sửa ngưỡng"); return; }
   const body = {
     logger_id: loggerId,
     tag_key: tagKey,
     min_value: nullableNumber(document.getElementById(`threshold_min_${safeKey}`).value),
     max_value: nullableNumber(document.getElementById(`threshold_max_${safeKey}`).value),
     warning_enabled: Number(document.getElementById(`threshold_enabled_${safeKey}`).value),
-    message: `Cảnh báo ${loggerId}/${tagKey}`
+    message: `Hệ thống phát hiện vượt ngưỡng an toàn tại ${loggerId}/${tagKey}`
   };
 
   const json = await api("/api/logger/thresholds", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body)
   });
-
-  if (json.success) {
-    await loadThresholdAllTags();
-  }
+  if (json.success) { await loadThresholdAllTags(); }
 }
 
 async function deleteThresholdRow(loggerId, tagKey) {
-  if (!isAdmin) {
-    alert("Chỉ Admin mới được xoá ngưỡng");
-    return;
-  }
+  if (!isAdmin) { alert("Chỉ Admin mới được xoá ngưỡng"); return; }
+  if (!confirm(`Hủy bỏ dải đo cấu hình ngưỡng của thẻ ${loggerId}/${tagKey}?`)) return;
 
-  if (!confirm(`Xoá ngưỡng ${loggerId}/${tagKey}?`)) return;
+  const json = await api(`/api/logger/thresholds/${encodeURIComponent(loggerId)}/${encodeURIComponent(tagKey)}`, { method: "DELETE" });
+  if (json.success) { await loadThresholdAllTags(); }
+}
 
-  const json = await api(
-    `/api/logger/thresholds/${encodeURIComponent(loggerId)}/${encodeURIComponent(tagKey)}`,
-    {
-      method: "DELETE"
-    }
-  );
-
-  if (json.success) {
-    await loadThresholdAllTags();
-  }
+async function loadThresholds() {
+  await api("/api/logger/thresholds");
 }
 
 function nullableNumber(value) {
@@ -816,6 +485,19 @@ function makeThresholdSafeKey(loggerId, tagKey) {
   return String(`${loggerId}_${tagKey}`).replace(/[^a-zA-Z0-9_-]/g, "_");
 }
 
+function escapeHtml(value) {
+  return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+}
+
+function escapeJs(value) {
+  return String(value ?? "").replaceAll("\\", "\\\\").replaceAll("'", "\\'");
+}
+
+if (isAdmin) {
+  loadUsers();
+  loadTelegramSettings();
+  loadThresholdAllTags();
+}
 </script>
 </body>
 </html>

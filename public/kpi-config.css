@@ -1,0 +1,233 @@
+:root {
+  --water-bg:    #eef2f7;
+  --water-text:  #0f172a;
+  --water-muted: #475569;
+  --water-border: #e2e8f0;
+  --primary-blue: #2196f3;
+}
+
+/* ── Khóa Viewport cố định không tràn màn hình ── */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* ── Override khối .page-content ── */
+.page-content {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  padding-top: calc(var(--header-height) + 16px);
+  margin-left: var(--sidebar-width);
+  height: 100vh;
+  width: calc(100vw - var(--sidebar-width));
+  box-sizing: border-box;
+  background: var(--water-bg);
+  color: var(--water-text);
+  transition: all 0.25s ease;
+  overflow: hidden;
+  gap: 12px;
+}
+
+body.sidebar-hidden .page-content {
+  margin-left: 0;
+  width: 100vw;
+}
+
+/* ── Thanh Toolbar tiêu đề Scada ── */
+.water-title-card {
+  flex: 0 0 auto;
+  background: #ffffff;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--water-border);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.logger-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.logger-toolbar h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary-blue);
+}
+
+/* ── Khung lưới chia diện tích chính ── */
+.config-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 14px;
+}
+
+/* Thẻ Card UI Scada */
+.scada-card {
+  background: #ffffff;
+  border: 1px solid var(--water-border);
+  border-radius: 8px;
+  padding: 14px;
+  box-sizing: border-box;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.scada-card h3 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--water-text);
+  border-bottom: 2px solid var(--water-bg);
+  padding-bottom: 6px;
+  flex: 0 0 auto;
+}
+
+.form-scroll-container {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* Danh sách KPI bên trái */
+.kpi-items-wrap {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.kpi-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--water-border);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.kpi-item:hover {
+  background: #f1f5f9;
+}
+
+.kpi-item.active {
+  background: #e0f2fe;
+  border-left: 4px solid var(--primary-blue);
+}
+
+/* Form cấu hình */
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.form-grid-2 label, .scada-card label {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--water-muted);
+  margin-bottom: 4px;
+  display: block;
+}
+
+.form-grid-2 input,
+.form-grid-2 select {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 12px;
+  border: 1px solid var(--water-border);
+  border-radius: 6px;
+  background-color: #f8fafc;
+  color: var(--water-text);
+  box-sizing: border-box;
+  outline: none;
+}
+
+.form-grid-2 input:focus,
+.form-grid-2 select:focus {
+  border-color: var(--primary-blue);
+  background-color: #ffffff;
+}
+
+h4 {
+  margin: 12px 0 6px 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--water-muted);
+}
+
+/* Khung chứa danh sách tích chọn checkbox nhúng */
+.check-panel {
+  border: 1px solid var(--water-border);
+  border-radius: 6px;
+  background: #f8fafc;
+  max-height: 140px;
+  overflow-y: auto;
+  padding: 6px 10px;
+  box-sizing: border-box;
+  margin-bottom: 6px;
+}
+
+.check-panel label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--water-text);
+}
+
+.check-panel input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+}
+
+/* Panel hiển thị log JSON */
+pre#output {
+  background: #0f172a;
+  color: #38bdf8;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 11px;
+  max-height: 120px;
+  overflow: auto;
+  margin: 8px 0 0 0;
+}
+
+/* Hệ thống nút bấm đồng bộ */
+button {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: var(--primary-blue);
+  color: white;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+button:hover { opacity: 0.9; }
+button.gray { background: #64748b; padding: 4px 10px; font-size: 11px; margin-bottom: 6px; }
+button.danger { background: #ef4444; }
+
+.muted { color: var(--water-muted); font-size: 12px; margin: 0; }
+
+/* Tùy biến thanh cuộn mỏng gọn */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+@media (max-width: 1100px) {
+  .config-grid { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) minmax(0, 1.5fr); }
+  .page-content { overflow-y: auto; }
+}

@@ -1,0 +1,306 @@
+:root {
+  --water-bg:    #eef2f7;
+  --water-text:  #0f172a;
+  --water-muted: #475569;
+  --water-border: #e2e8f0;
+  --primary-blue: #2196f3;
+}
+
+/* ── Định cấu hình cố định Viewport không tràn trang ── */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* ── Override khối .page-content ── */
+.page-content {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  padding-top: calc(var(--header-height) + 16px);
+  margin-left: var(--sidebar-width);
+  height: 100vh;
+  width: calc(100vw - var(--sidebar-width));
+  box-sizing: border-box;
+  background: var(--water-bg);
+  color: var(--water-text);
+  transition: all 0.25s ease;
+  overflow: hidden;
+  gap: 12px;
+}
+
+body.sidebar-hidden .page-content {
+  margin-left: 0;
+  width: 100vw;
+}
+
+/* ── Tiêu đề trang giống Scada ── */
+.water-title-card {
+  flex: 0 0 auto;
+  background: #ffffff;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--water-border);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.logger-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.logger-toolbar h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary-blue);
+}
+
+/* ── Khung bố cục chính lấp đầy diện tích đáy ── */
+.logger-layout {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 320px 1fr 1.1fr;
+  gap: 14px;
+}
+
+/* Thẻ Card dùng chung style sáng sủa */
+.scada-card {
+  background: #ffffff;
+  border: 1px solid var(--water-border);
+  border-radius: 8px;
+  padding: 14px;
+  box-sizing: border-box;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.scada-card h3 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--water-text);
+  border-bottom: 2px solid var(--water-bg);
+  padding-bottom: 6px;
+  flex: 0 0 auto;
+}
+
+/* ── CỘT 1: Danh sách Logger ── */
+.logger-list-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.logger-search {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--water-border);
+  background: #f8fafc;
+  flex: 0 0 auto;
+}
+
+.logger-search input {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 13px;
+  border: 1px solid var(--water-border);
+  border-radius: 6px;
+  outline: none;
+}
+.logger-search input:focus { border-color: var(--primary-blue); }
+
+.logger-items {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.logger-item {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--water-border);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.logger-item:hover {
+  background: #f1f5f9;
+}
+
+.logger-item.active {
+  background: #e0f2fe;
+  border-left: 4px solid var(--primary-blue);
+}
+
+.logger-name {
+  font-weight: 700;
+  color: var(--water-text);
+  font-size: 13px;
+}
+
+.logger-meta {
+  color: var(--water-muted);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+/* ── CỘT 2: Form cấu hình thông tin ── */
+.form-scroll-container {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.form-grid-2 label {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--water-muted);
+  margin-bottom: 4px;
+  display: block;
+}
+
+.form-grid-2 input,
+.form-grid-2 select {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 12px;
+  border: 1px solid var(--water-border);
+  border-radius: 6px;
+  background-color: #f8fafc;
+  color: var(--water-text);
+  box-sizing: border-box;
+  outline: none;
+}
+
+.form-grid-2 input:focus,
+.form-grid-2 select:focus {
+  border-color: var(--primary-blue);
+  background-color: #ffffff;
+}
+
+.form-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+pre#output {
+  background: #0f172a;
+  color: #38bdf8;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  max-height: 120px;
+  overflow: auto;
+  margin: 8px 0 0 0;
+}
+
+/* ── CỘT 3: Bảng cấu hình Tags ── */
+.tag-table-wrap {
+  flex: 1;
+  overflow: auto;
+  border: 1px solid var(--water-border);
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.tag-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.tag-table th, .tag-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--water-border);
+  text-align: left;
+}
+
+.tag-table th {
+  background: #f8fafc;
+  font-weight: 700;
+  color: var(--water-muted);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.tag-table input, .tag-table select {
+  padding: 4px 6px;
+  font-size: 11px;
+  border: 1px solid var(--water-border);
+  border-radius: 4px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+.tag-table input:focus { border-color: var(--primary-blue); }
+
+.manual-add-section {
+  flex: 0 0 auto;
+  margin-top: 12px;
+  border-top: 1px dashed var(--water-border);
+  padding-top: 10px;
+}
+.manual-add-section h4 { margin: 0 0 8px 0; font-size: 12px; font-weight: 700; color: var(--water-muted); }
+
+/* Khung sao chép từ logger khác */
+.copy-box {
+  flex: 0 0 auto;
+  margin-top: 12px;
+  background: #f8fafc;
+  border: 1px solid var(--water-border);
+  border-radius: 6px;
+  padding: 10px;
+}
+.copy-box h4 { margin: 0 0 6px 0; font-size: 12px; font-weight: 700; color: var(--water-text); }
+.copy-box select { padding: 4px 8px; font-size: 11px; border-radius: 4px; border: 1px solid var(--water-border); width: 100%; margin-bottom: 6px; }
+
+.copy-tag-list {
+  max-height: 100px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid var(--water-border);
+  border-radius: 4px;
+  padding: 6px;
+}
+.copy-tag-list label { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 500; padding: 2px 0; cursor: pointer; }
+
+/* ── Nút bấm hệ thống đồng bộ ── */
+button {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: var(--primary-blue);
+  color: white;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+button:hover { opacity: 0.9; }
+button.gray { background: #64748b; }
+button.danger { background: #ef4444; }
+
+/* Tùy biến thanh cuộn mảnh */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+@media (max-width: 1400px) {
+  .logger-layout { grid-template-columns: 280px 1fr; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
+  .tag-card { grid-column: 1 / -1; }
+  .page-content { overflow-y: auto; }
+}

@@ -8,6 +8,10 @@
 <link rel="stylesheet" href="/shared/layout.css">
 <link rel="stylesheet" href="/quality-water.css">
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/vn.js"></script>
+
 <script src="/shared/auth.js"></script>
 <script src="/shared/layout.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
@@ -15,177 +19,63 @@
 
 <body>
 <script>AppLayout.initLayout("Chất lượng nước");</script>
-
-<main class="page-content water-page">
-
+<main class="page-content">
     <div class="water-title">
-      <h2>CHẤT LƯỢNG NƯỚC SCADA</h2>
+      <h2>DỮ LIỆU SCADA CHẤT LƯỢNG NƯỚC</h2>
     </div>
 
-    <div class="water-kpi-grid" id="kpiBar">
-      <div class="water-kpi-card">
-        <span>Tổng trạm SCADA</span>
-        <h2 id="kpiTotal">--</h2>
-      </div>
-      <div class="water-kpi-card">
-        <span>Đang online</span>
-        <h2 id="kpiOnline" style="color:#16a34a !important">--</h2>
-      </div>
-      <div class="water-kpi-card">
-        <span>Offline / mất kết nối</span>
-        <h2 id="kpiOffline" style="color:#dc2626 !important">--</h2>
-      </div>
-      <div class="water-kpi-card">
-        <span>Thông số vượt ngưỡng</span>
-        <h2 id="kpiAlert" style="color:#ea580c !important">--</h2>
-      </div>
+    <div class="kpi-row-grid" id="kpiContainer">
+         <div class="water-empty">Đang tải dữ liệu KPI trạm...</div>
     </div>
 
-    <div class="water-card water-filter-card">
-      <div class="water-filter-grid">
-
-        <div>
-          <label>Trạm SCADA</label>
-          <select id="stationFilter">
-            <option value="">Tất cả</option>
-          </select>
+    <div class="water-global-filter-bar">
+        <div class="global-filter-group">
+            <label>Từ thời gian:</label>
+            <input id="filterFrom" type="text" readonly>
         </div>
-
-        <div>
-          <label>Thông số</label>
-          <select id="parameterFilter">
-            <option value="">Tất cả</option>
-            <option value="pH">pH</option>
-            <option value="TDS">TDS</option>
-            <option value="amino">Amino</option>
-            <option value="nitrat">Nitrat</option>
-          </select>
+        <div class="global-filter-group">
+            <label>Đến thời gian:</label>
+            <input id="filterTo" type="text" readonly>
         </div>
-
-        <div>
-          <label>Trạng thái</label>
-          <select id="statusFilter">
-            <option value="">Tất cả</option>
-            <option value="online">Online</option>
-            <option value="offline">Offline</option>
-          </select>
+        <div class="global-filter-group">
+            <label>Chu kỳ:</label>
+            <select id="filterInterval">
+                <option value="5m" selected>5 phút</option>
+                <option value="10m">10 phút</option>
+                <option value="15m">15 phút</option>
+                <option value="30m">30 phút</option>
+                <option value="1h">1 giờ</option>
+                <option value="1d">1 ngày</option>
+            </select>
         </div>
-
-        <div>
-          <label>Tự động cập nhật</label>
-          <select id="refreshInterval">
-            <option value="0">Tắt</option>
-            <option value="10">10 giây</option>
-            <option value="30" selected>30 giây</option>
-            <option value="60">60 giây</option>
-          </select>
-        </div>
-
-      </div>
+        <button class="global-filter-btn" onclick="applyGlobalFilter()">Xem kết quả</button>
     </div>
 
-    <div class="water-card">
-      <div class="water-summary" id="summary">Đang tải dữ liệu...</div>
-      <div class="water-quality-grid" id="qualityGrid"></div>
+    <div class="chart-row-grid" id="chartContainer">
+         <div class="water-empty">Đang tải dữ liệu biểu đồ...</div>
     </div>
-
 </main>
 
-<div id="chartModal" class="water-modal">
-  <div class="water-modal-content water-modal-wide">
-    <div class="water-modal-header">
-      <h3 id="modalStationName">Tên trạm</h3>
-      <span class="water-modal-close" onclick="closeChartModal()">&times;</span>
-    </div>
-    <div class="water-modal-body">
-      <div class="chart-triple-grid">
-        <div class="chart-triple-item">
-          <div class="chart-triple-title" id="chartTitle0"></div>
-          <div class="chart-container-small"><canvas id="chart0"></canvas></div>
-        </div>
-        <div class="chart-triple-item">
-          <div class="chart-triple-title" id="chartTitle1"></div>
-          <div class="chart-container-small"><canvas id="chart1"></canvas></div>
-        </div>
-        <div class="chart-triple-item">
-          <div class="chart-triple-title" id="chartTitle2"></div>
-          <div class="chart-container-small"><canvas id="chart2"></canvas></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<style>
-/* ── 3-chart modal layout ── */
-.water-modal-wide { max-width: 960px !important; width: 95% !important; }
-
-.chart-triple-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.chart-triple-item {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 10px 12px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.chart-triple-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: #475569;
-  text-align: center;
-  letter-spacing: 0.3px;
-}
-
-.chart-container-small {
-  position: relative;
-  height: 220px;
-  width: 100%;
-}
-
-.chart-container-small canvas {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-@media (max-width: 700px) {
-  .chart-triple-grid { grid-template-columns: 1fr; }
-  .chart-container-small { height: 180px; }
-}
-</style>
-
 <script>
-// ── Hằng số ────────────────────────────────────────────────────────────────
+// ── Hằng số cấu hình định nghĩa tông màu đồng bộ ──────────────────────────
 const QUALITY_TAGS = ["pH", "TDS", "amino", "nitrat"];
 const ONLINE_THRESHOLD_MS = 30 * 60 * 1000;
 
 const PARAM_CONFIGS = {
-  pH:     { label: 'pH',           color: '#2563eb' },
-  TDS:    { label: 'TDS (mg/L)',   color: '#16a34a' },
-  amino:  { label: 'Amino (mg/L)', color: '#ea580c' },
-  nitrat: { label: 'Nitrat (mg/L)',color: '#dc2626' }
+  pH:     { label: 'pH',           color: '#2563eb' }, // Xanh dương
+  TDS:    { label: 'TDS (mg/L)',   color: '#10b981' }, // Xanh Emerald
+  amino:  { label: 'Amino (mg/L)', color: '#f59e0b' }, // Cam hổ phách
+  nitrat: { label: 'Nitrat (mg/L)',color: '#ef4444' }  // Đỏ hồng
 };
 
-// ── State ──────────────────────────────────────────────────────────────────
+// ── State lưu trữ ──────────────────────────────────────────────────────────
 let cachedStations = [];
-let refreshTimer   = null;
-// activeCharts = [] được khai báo cùng openChartModal bên dưới
+let activeCharts   = {}; 
+let isPickerInitialized = false;
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+  return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
 }
 
 function formatNumber(value, decimals = 2) {
@@ -202,252 +92,234 @@ function isLoggerOnline(station) {
   const latestTs = tags.map(t => t.data_ts).filter(Boolean).sort().pop();
   if (!latestTs) return false;
   const ts = new Date(String(latestTs).replace(" ", "T"));
-  if (isNaN(ts.getTime())) return false;
-  return Date.now() - ts.getTime() <= ONLINE_THRESHOLD_MS;
+  return !isNaN(ts.getTime()) && (Date.now() - ts.getTime() <= ONLINE_THRESHOLD_MS);
 }
 
-// ── Phân loại chất lượng ──────────────────────────────────────────────────
 function getQualityClass(tagKey, value) {
   const v = Number(value);
   if (isNaN(v)) return "";
   switch (tagKey) {
     case "pH":     return (v < 6.5 || v > 8.5) ? "status-bad"  : "status-good";
     case "TDS":    return v > 1000 ? "status-bad"  : v > 500 ? "status-warn" : "status-good";
-    case "amino":  return v > 1    ? "status-warn" : "status-good";
+    case "amino":  return v > 2.0  ? "status-bad"  : v > 1.0 ? "status-warn" : "status-good";
     case "nitrat": return v > 50   ? "status-bad"  : v > 25  ? "status-warn" : "status-good";
     default:       return "";
   }
 }
 
-function hasAlert(station) {
-  return QUALITY_TAGS.some(k => {
-    const tag = (station.tags || {})[k];
-    if (!tag) return false;
-    const cls = getQualityClass(k, tag.value);
-    return cls !== "status-good" && cls !== "";
-  });
+function formatDate(date) {
+  const pad = v => String(v).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
-// ── Fetch API ──────────────────────────────────────────────────────────────
 async function api(url) {
   const res  = await fetch(url, { cache: "no-store" });
-  const text = await res.text();
-  try { return JSON.parse(text); }
-  catch { return { success: false, message: "API không trả JSON" }; }
+  try { return await res.json(); } catch { return { success: false }; }
 }
 
-async function fetchMapData() {
-  const json = await api("/api/logger/readings/map");
-  if (!json.success) throw new Error(json.message || "API error");
-  cachedStations = (json.data || []).filter(
-    s => s.source === "scada" || String(s.logger_id || "").startsWith("scada_")
-  );
-}
-
-// ── KPI bar ────────────────────────────────────────────────────────────────
-function updateKpiBar(stations) {
-  const total   = stations.length;
-  const online  = stations.filter(s => isLoggerOnline(s)).length;
-  const offline = total - online;
-  const alert   = stations.filter(s => hasAlert(s)).length;
-
-  document.getElementById("kpiTotal").textContent   = total;
-  document.getElementById("kpiOnline").textContent  = online;
-  document.getElementById("kpiOffline").textContent = offline;
-  document.getElementById("kpiAlert").textContent   = alert;
-}
-
-// ── Station filter dropdown ────────────────────────────────────────────────
-function populateStationFilter() {
-  const select  = document.getElementById("stationFilter");
-  const current = select.value;
-  select.innerHTML =
-    `<option value="">Tất cả</option>` +
-    cachedStations.map(s =>
-      `<option value="${escapeHtml(s.logger_id)}"` +
-      (s.logger_id === current ? " selected" : "") +
-      `>${escapeHtml(s.name || s.logger_id)}</option>`
-    ).join("");
-}
-
-// ── Load + render ──────────────────────────────────────────────────────────
+// ── Điều phối trang chính ──────────────────────────────────────────────────
 async function loadQualityData() {
   try {
-    await fetchMapData();
-    populateStationFilter();
-    updateKpiBar(cachedStations);
+    const jsonMap = await api("/api/logger/readings/map");
+    if (!jsonMap.success) throw new Error();
 
-    const stationId = document.getElementById("stationFilter").value;
-    const parameter = document.getElementById("parameterFilter").value;
-    const status    = document.getElementById("statusFilter").value;
+    cachedStations = (jsonMap.data || []).filter(
+      s => s.source === "scada" || String(s.logger_id || "").startsWith("scada_")
+    );
 
-    let stations = [...cachedStations];
-    if (stationId) stations = stations.filter(s => s.logger_id === stationId);
-    if (status === "online")  stations = stations.filter(s =>  isLoggerOnline(s));
-    if (status === "offline") stations = stations.filter(s => !isLoggerOnline(s));
+    const visible = cachedStations.filter(s => QUALITY_TAGS.some(k => s.tags && k in s.tags));
+    const targetStations = visible.slice(0, 3);
 
-    renderCards(stations, parameter);
+    // 1. Khởi tạo mốc thời gian mặc định (60 phút)
+    if (!isPickerInitialized) {
+       initGlobalDatePickers();
+    }
+
+    // 2. Dựng khung độc lập cho KPI (Hàng trên) và Biểu đồ (Hàng dưới)
+    renderLayoutFrames(targetStations);
+
+    // 3. Tải đồ thị lịch sử
+    if (targetStations.length > 0) {
+      await fetchAndDrawAllCharts(targetStations);
+    }
+
   } catch (err) {
-    console.error(err);
-    document.getElementById("summary").textContent = "Không tải được dữ liệu";
+    document.getElementById("kpiContainer").innerHTML = `<div class="water-empty">Không kết nối được dữ liệu SCADA.</div>`;
+    document.getElementById("chartContainer").innerHTML = ``;
   }
 }
 
-// ── Render cards ───────────────────────────────────────────────────────────
-function renderCards(stations, parameterFilter) {
-  const grid    = document.getElementById("qualityGrid");
-  const summary = document.getElementById("summary");
+function initGlobalDatePickers() {
+  const now = new Date();
+  const sixtyMinutesAgo = new Date(now.getTime() - 60 * 60 *4* 1000); // 60 phút gần nhất
 
-  const visible = stations.filter(s => QUALITY_TAGS.some(k => s.tags && k in s.tags));
+  const flatpickrConfig = { enableTime: true, time_24hr: true, dateFormat: "Y-m-d H:i:S", locale: "vn" };
+  flatpickr("#filterFrom", { ...flatpickrConfig, defaultDate: sixtyMinutesAgo });
+  flatpickr("#filterTo", { ...flatpickrConfig, defaultDate: now });
+  isPickerInitialized = true;
+}
 
-  if (visible.length === 0) {
-    grid.innerHTML      = `<div class="water-empty">Không có dữ liệu chất lượng nước</div>`;
-    summary.textContent = "0 trạm";
+// ── Tách khung Layout vào đúng vị trí chỉ định ──────────────────────────────
+function renderLayoutFrames(targetStations) {
+  const kpiBox = document.getElementById("kpiContainer");
+  const chartBox = document.getElementById("chartContainer");
+  if (!kpiBox || !chartBox) return;
+
+  if (targetStations.length === 0) {
+    kpiBox.innerHTML = `<div class="water-empty">Không tìm thấy dữ liệu trạm SCADA hợp lệ</div>`;
+    chartBox.innerHTML = ``;
     return;
   }
 
-  summary.textContent = `Hiển thị ${visible.length} / ${cachedStations.length} trạm SCADA (Click vào card để xem biểu đồ)`;
-
-  grid.innerHTML = visible.map(station => {
+  // Đổ dữ liệu vào hàng KPI (NẰM TRÊN BỘ LỌC) - Tối ưu Grid 2x2 động đồng bộ màu chỉ số
+  kpiBox.innerHTML = targetStations.map(station => {
     const tags   = station.tags || {};
     const online = isLoggerOnline(station);
-
-    const keys = QUALITY_TAGS.filter(k => k in tags && (!parameterFilter || k === parameterFilter));
-    if (keys.length === 0) return "";
-
+    const keys   = QUALITY_TAGS.filter(k => k in tags);
     const latestTs = keys.map(k => tags[k].data_ts || "").filter(Boolean).sort().at(-1) || "";
-
-    const badge = online
-      ? `<span class="water-badge online">● Online</span>`
-      : `<span class="water-badge offline">● Offline</span>`;
+    const badge = online ? `<span class="water-badge online">● Online</span>` : `<span class="water-badge offline">● Offline</span>`;
 
     const rows = keys.map(k => {
       const tag = tags[k];
-      const cls = getQualityClass(k, tag.value);
+      const valueCls = getQualityClass(k, tag.value); 
+      
+      let statusTxt = "BÌNH THƯỜNG";
+      if (valueCls === "status-warn") statusTxt = "CẢNH BÁO";
+      if (valueCls === "status-bad") statusTxt = "VƯỢT NGƯỠNG";
+
+      // Tạo class riêng biệt theo tên biến để ăn màu CSS (param-ph, param-tds,...)
+      const paramSpecificCls = `param-${String(k).toLowerCase()}`;
+
       return `
-        <div class="water-quality-item">
-          <div class="water-quality-label">${escapeHtml(tag.tag_name || k)}</div>
-          <div class="water-quality-value ${escapeHtml(cls)}">${formatNumber(tag.value)}</div>
-          <div class="water-quality-unit">${escapeHtml(tag.unit || "")}</div>
+        <div class="water-quality-item ${paramSpecificCls} ${valueCls}">
+          <div class="water-item-top-row">
+            <div class="water-quality-label">${escapeHtml(tag.tag_name || k)}</div>
+            <div class="water-quality-status-text">${statusTxt}</div>
+          </div>
+          <div class="water-quality-value-group">
+             <span class="water-quality-value">${formatNumber(tag.value)}</span>
+             <span class="water-quality-unit">${escapeHtml(tag.unit || "")}</span>
+          </div>
         </div>`;
     }).join("");
 
     return `
-      <div class="water-quality-card${online ? "" : " offline"}" style="cursor:pointer;" onclick="openChartModal('${escapeHtml(station.logger_id)}')">
+      <div class="water-quality-card ${online ? "" : "offline"}">
         <div class="water-station-header">
           <div class="water-station-name">${escapeHtml(station.name || station.logger_id)}</div>
           ${badge}
         </div>
-        <div class="water-station-time">${escapeHtml(latestTs)}</div>
+        <div class="water-station-time">Cập nhật: ${escapeHtml(latestTs)}</div>
         <div class="water-quality-values">${rows}</div>
       </div>`;
   }).join("");
+
+  // Đổ dữ liệu vào hàng Chart xu hướng (NẰM DƯỚI BỘ LỌC)
+  chartBox.innerHTML = targetStations.map(station => `
+    <div class="chart-item-box" id="box-${escapeHtml(station.logger_id)}">
+       <canvas id="main-chart-${escapeHtml(station.logger_id)}"></canvas>
+    </div>
+  `).join("");
 }
 
-// ── Modal & 3 Charts side-by-side ─────────────────────────────────────────
-// Chart 0 = pH | Chart 1 = TDS | Chart 2 = Amino + Nitrat (cùng đơn vị mg/L)
-const CHART_GROUPS = [
-  { keys: ["pH"],            title: "pH" },
-  { keys: ["TDS"],           title: "TDS (mg/L)" },
-  { keys: ["amino","nitrat"],title: "Amino & Nitrat (mg/L)" }
-];
+// ── Kéo dữ liệu lịch sử và vẽ đồ thị ─────────────────────────────────────────
+async function fetchAndDrawAllCharts(targetStations) {
+  const fromVal = document.getElementById("filterFrom").value;
+  const toVal = document.getElementById("filterTo").value;
+  const intervalVal = document.getElementById("filterInterval").value;
 
-let activeCharts = []; // lưu 3 Chart instance
+  const params = new URLSearchParams({
+    from: fromVal, to: toVal, interval: intervalVal,
+    logger_ids: targetStations.map(s => s.logger_id).join(","),
+    tag_keys: QUALITY_TAGS.join(","), limit: "10000"
+  });
 
-function openChartModal(loggerId) {
-  const station = cachedStations.find(s => s.logger_id === loggerId);
-  if (!station) return;
+  const jsonHistory = await api(`/api/logger/history/table?${params.toString()}`);
+  
+  targetStations.forEach(station => {
+    const box = document.getElementById(`box-${station.logger_id}`);
+    if (!box) return;
 
-  document.getElementById("modalStationName").textContent =
-    `XU HƯỚNG CHẤT LƯỢNG NƯỚC - ${station.name || station.logger_id}`;
+    box.innerHTML = `<canvas id="main-chart-${escapeHtml(station.logger_id)}"></canvas>`;
 
-  document.getElementById("chartModal").style.display = "flex";
+    if (!jsonHistory.success || !jsonHistory.rows || jsonHistory.rows.length === 0) {
+      box.innerHTML = `<div style="font-size:11px; text-align:center; padding-top:45px; color:#94a3b8;">Không có dữ liệu lịch sử</div>`;
+      return;
+    }
 
-  // Hủy 3 chart cũ
-  activeCharts.forEach(c => c && c.destroy());
-  activeCharts = [];
-
-  const mockTimestamps = ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00"];
-
-  setTimeout(() => {
-    CHART_GROUPS.forEach((group, idx) => {
-      // Tiêu đề nhỏ trên mỗi chart
-      document.getElementById("chartTitle" + idx).textContent = group.title;
-
-      const datasets = [];
-      group.keys.forEach(k => {
-        if (!station.tags || !station.tags[k]) return;
-        const currentVal = Number(station.tags[k].value) || 0;
-        const dataValues = mockTimestamps.map((_, i) => {
-          if (i === mockTimestamps.length - 1) return currentVal;
-          const factor = (Math.random() - 0.5) * currentVal * 0.1;
-          return Number((currentVal + factor).toFixed(2));
-        });
-        datasets.push({
-          label:           PARAM_CONFIGS[k].label,
-          data:            dataValues,
-          borderColor:     PARAM_CONFIGS[k].color,
-          backgroundColor: PARAM_CONFIGS[k].color + "1A",
-          borderWidth:     2,
-          tension:         0.3,
-          pointRadius:     3,
-          fill:            false
-        });
-      });
-
-      if (datasets.length === 0) { activeCharts.push(null); return; }
-
-      const ctx = document.getElementById("chart" + idx).getContext("2d");
-      const chart = new Chart(ctx, {
-        type: "line",
-        data: { labels: mockTimestamps, datasets },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { position: "top", labels: { boxWidth: 10, font: { size: 11 } } },
-            tooltip: { mode: "index", intersect: false }
-          },
-          scales: {
-            x: { grid: { display: false }, ticks: { font: { size: 10 } } },
-            y: { beginAtZero: false, grid: { color: "#e2e8f0" }, ticks: { font: { size: 10 } } }
-          }
-        }
-      });
-      activeCharts.push(chart);
+    const sortedRows = [...jsonHistory.rows].reverse();
+    const labels = sortedRows.map(r => {
+      const tsStr = r.ts || "";
+      const diffMs = new Date(toVal.replace(" ", "T")) - new Date(fromVal.replace(" ", "T"));
+      return diffMs <= 24 * 60 * 60 * 1000 ? tsStr.substring(11, 16) : tsStr.substring(5, 16);
     });
-  }, 50);
+
+    const datasets = [];
+    QUALITY_TAGS.forEach(k => {
+      const dataValues = sortedRows.map(r => {
+        const cell = r[station.logger_id]?.[k];
+        return cell !== undefined && cell !== null ? Number(cell.value) : null;
+      });
+      if (dataValues.every(v => v === null)) return;
+
+      datasets.push({
+        label: PARAM_CONFIGS[k].label, data: dataValues,
+        borderColor: PARAM_CONFIGS[k].color, backgroundColor: PARAM_CONFIGS[k].color + "10",
+        borderWidth: 1.6, tension: 0.15,
+        pointRadius: sortedRows.length > 60 ? 0 : 1.25, pointHoverRadius: 1.25,
+        fill: false, spanGaps: true
+      });
+    });
+
+    renderChartObject(station, labels, datasets);
+  });
 }
 
-function closeChartModal() {
-  document.getElementById("chartModal").style.display = "none";
-  activeCharts.forEach(c => c && c.destroy());
-  activeCharts = [];
+function renderChartObject(station, labels, datasets) {
+  const canvasId = `main-chart-${station.logger_id}`;
+  const ctx = document.getElementById(canvasId)?.getContext("2d");
+  if (!ctx) return;
+
+  if (activeCharts[station.logger_id]) activeCharts[station.logger_id].destroy();
+
+  activeCharts[station.logger_id] = new Chart(ctx, {
+    type: "line",
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        title: { display: true, text: `Xu hướng: ${station.name || station.logger_id}`, font: { size: 12, weight: 'bold' } },
+        legend: { position: "bottom", labels: { boxWidth: 6, font: { size: 9 }, padding: 4 } },
+        tooltip: { mode: "index", intersect: false }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 8 }, maxTicksLimit: 5 } },
+        y: { grid: { color: "#f1f5f9" }, ticks: { font: { size: 8 } } }
+      }
+    }
+  });
 }
 
-// Click ra ngoài modal thì đóng
-window.addEventListener("click", function(event) {
-  const modal = document.getElementById("chartModal");
-  if (event.target === modal) closeChartModal();
-});
-
-// ── Auto refresh ───────────────────────────────────────────────────────────
-function setupAutoRefresh() {
-  if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
-  const sec = Number(document.getElementById("refreshInterval").value);
-  if (sec > 0) refreshTimer = setInterval(loadQualityData, sec * 1000);
+function applyGlobalFilter() {
+  const visible = cachedStations.filter(s => QUALITY_TAGS.some(k => s.tags && k in s.tags));
+  const targetStations = visible.slice(0, 3);
+  if (targetStations.length > 0) fetchAndDrawAllCharts(targetStations);
 }
 
-// ── Events ─────────────────────────────────────────────────────────────────
-document.getElementById("stationFilter").addEventListener("change", loadQualityData);
-document.getElementById("parameterFilter").addEventListener("change", loadQualityData);
-document.getElementById("statusFilter").addEventListener("change", loadQualityData);
-document.getElementById("refreshInterval").addEventListener("change", setupAutoRefresh);
+// Cập nhật Realtime định kỳ 30 giây
+setInterval(async () => {
+   try {
+     const jsonMap = await api("/api/logger/readings/map");
+     if (jsonMap.success) {
+        cachedStations = (jsonMap.data || []).filter(s => s.source === "scada" || String(s.logger_id || "").startsWith("scada_"));
+        const visible = cachedStations.filter(s => QUALITY_TAGS.some(k => s.tags && k in s.tags));
+        renderLayoutFrames(visible.slice(0, 3));
+        applyGlobalFilter();
+     }
+   } catch(e){}
+}, 30 * 1000);
 
-// ── Init ───────────────────────────────────────────────────────────────────
 loadQualityData();
-setupAutoRefresh();
 </script>
-
 </body>
 </html>

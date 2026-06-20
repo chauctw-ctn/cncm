@@ -1,0 +1,234 @@
+:root {
+  --water-bg:    #eef2f7;
+  --water-text:  #0f172a;
+  --water-muted: #475569;
+  --water-border: #e2e8f0;
+  --primary-blue: #2196f3;
+}
+
+/* ── Định cấu hình Viewport cố định không tràn màn hình ── */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* ── Override khối .page-content ── */
+.page-content {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  padding-top: calc(var(--header-height) + 16px);
+  margin-left: var(--sidebar-width);
+  height: 100vh;
+  width: calc(100vw - var(--sidebar-width));
+  box-sizing: border-box;
+  background: var(--water-bg);
+  color: var(--water-text);
+  transition: all 0.25s ease;
+  overflow: hidden;
+  gap: 12px;
+}
+
+body.sidebar-hidden .page-content {
+  margin-left: 0;
+  width: 100vw;
+}
+
+/* ── Tiêu đề trang Scada ── */
+.water-title-card {
+  flex: 0 0 auto;
+  background: #ffffff;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--water-border);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.water-title-card h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary-blue);
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+/* ── Khung bố cục chính chia làm 2 phân khu lớn cuộn nội bộ ── */
+.settings-main-layout {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1.3fr; /* Cột 1: Cấu hình chung, Cột 2: Bảng ngưỡng cảnh báo */
+  gap: 14px;
+}
+
+.settings-column {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  padding-right: 2px;
+  min-height: 0;
+}
+
+/* Thẻ Card UI Scada đồng bộ */
+.scada-card {
+  background: #ffffff;
+  border: 1px solid var(--water-border);
+  border-radius: 8px;
+  padding: 14px;
+  box-sizing: border-box;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.scada-card h3 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--water-text);
+  border-bottom: 2px solid var(--water-bg);
+  padding-bottom: 6px;
+}
+
+.setting-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.full-width {
+  grid-column: span 2;
+}
+
+label {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--water-muted);
+  margin-bottom: 4px;
+  display: block;
+}
+
+input, select {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 12px;
+  border: 1px solid var(--water-border);
+  border-radius: 6px;
+  background-color: #f8fafc;
+  color: var(--water-text);
+  box-sizing: border-box;
+  outline: none;
+}
+
+input:focus, select:focus {
+  border-color: var(--primary-blue);
+  background-color: #ffffff;
+}
+
+/* ── Bảng hiển thị (Table UI) ── */
+.table-wrap {
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid var(--water-border);
+  border-radius: 6px;
+  margin-top: 10px;
+}
+
+.threshold-table-wrap {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid var(--water-border);
+  border-radius: 6px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+table th, table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--water-border);
+  text-align: left;
+}
+
+table th {
+  background: #f8fafc;
+  font-weight: 700;
+  color: var(--water-muted);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* ── Tiện ích phụ trợ ── */
+.help-box {
+  background: #f8fafc;
+  border: 1px dashed var(--water-border);
+  border-radius: 6px;
+  padding: 10px;
+  margin-top: 10px;
+  font-size: 11px;
+}
+.help-box h4 { margin: 0 0 6px 0; font-size: 12px; color: var(--water-text); }
+.help-box ol { margin: 0; padding-left: 16px; color: var(--water-muted); }
+
+pre {
+  background: #0f172a;
+  color: #38bdf8;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  max-height: 120px;
+  overflow: auto;
+  margin: 6px 0;
+}
+
+.status-ok { color: #10b981; font-weight: 700; font-size: 13px; margin: 6px 0 0 0; }
+.status-error { color: #ef4444; font-weight: 700; font-size: 13px; margin: 6px 0 0 0; }
+.muted { color: var(--water-muted); font-size: 12px; margin: 0 0 10px 0; }
+
+/* ── Hệ thống Nút bấm đồng bộ ── */
+button {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: var(--primary-blue);
+  color: white;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+button:hover { opacity: 0.9; }
+button.gray { background: #64748b; }
+button.danger { background: #ef4444; }
+
+.card-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 6px;
+}
+
+/* Thanh cuộn mảnh */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+@media (max-width: 1200px) {
+  .settings-main-layout { grid-template-columns: 1fr; }
+  .page-content { overflow-y: auto; }
+}

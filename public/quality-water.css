@@ -1,10 +1,3 @@
-/* ======================================================
-   quality-water.css
-   HTML: <main class="page-content water-page"> — 1 element duy nhất,
-   không có wrapper .water-page bên trong .page-content nữa.
-   Pattern từ logger-map.css: override html/body và .page-content.
-   ====================================================== */
-
 :root {
   --water-bg:    #eef2f7;
   --water-text:  #0f172a;
@@ -12,59 +5,39 @@
   --water-border: #e2e8f0;
 }
 
-/* ── Reset như logger-map.css ── */
+/* ── Định cấu hình tràn trang cố định theo Viewport ── */
 html, body {
   margin: 0;
   padding: 0;
-  height: 100%;
-  width: 100%;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden; 
 }
 
-/* ── Override .page-content của layout.css ──
-      Fix: layout.css set color: var(--text) = #f4f6f9 (trắng) trên body
-      → phải đặt color và background trực tiếp trên .page-content ── */
+/* ── Khối main bao bọc toàn màn hình ── */
 .page-content {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  padding-top: calc(var(--header-height) + 12px);
+  padding: 16px;
+  padding-top: calc(var(--header-height) + 16px);
   margin-left: var(--sidebar-width);
-  min-height: 100vh;
+  height: 100vh;
+  width: calc(100vw - var(--sidebar-width));
   box-sizing: border-box;
   background: var(--water-bg);
   color: var(--water-text);
-  transition: margin-left 0.25s ease;
+  transition: all 0.25s ease;
+  overflow: hidden; 
 }
 
 body.sidebar-hidden .page-content {
   margin-left: 0;
+  width: 100vw;
 }
 
-/* Triệt tiêu color trắng kế thừa từ body */
-.page-content * {
-  color: inherit;
-}
-
-/* ======================================================
-   Tiêu đề trang
-   ====================================================== */
-.chart-container{
-  position:relative;
-  width:100%;
-  height:450px;
-  min-height:450px;
-}
-
-#historyChart{
-  width:100% !important;
-  height:100% !important;
-}
-
-.water-modal{
-  z-index:99999;
-}
+/* ── Tiêu đề ── */
 .water-title {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -72,380 +45,269 @@ body.sidebar-hidden .page-content {
   background: linear-gradient(135deg, #2196f3, #1976d2);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(33, 150, 243, 0.25);
+  margin-bottom: 12px;
 }
-
 .water-title h2 {
   margin: 0;
   color: #ffffff !important;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
 }
 
-/* ======================================================
-   Card dùng chung
-   ====================================================== */
-
-.water-card {
-  margin: 0;
-  padding: 10px;
-  border-radius: 8px;
-  background: #ffffff;
-  border: 1px solid var(--water-border);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+/* ── Hàng chứa 3 thẻ KPI (Phần trên bộ lọc) ── */
+.kpi-row-grid {
+  flex: 1.2; /* Tỷ lệ chiều cao phần KPI */
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 12px;
 }
 
-/* ======================================================
-   Bộ lọc
-   ====================================================== */
+/* ── Thanh bộ lọc nằm ở giữa KPI và CHART ── */
+.water-global-filter-bar {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: nowrap;       
+  overflow-x: auto;        
+  white-space: nowrap;     
+  gap: 16px;
+  align-items: center;
+  background: #ffffff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--water-border);
+  margin-bottom: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+/* Ẩn thanh cuộn trình duyệt của bộ lọc */
+.water-global-filter-bar::-webkit-scrollbar {
+  height: 4px; 
+}
+.water-global-filter-bar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
 
-.water-filter-card { flex: 0 0 auto; }
-
-.water-filter-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+.global-filter-group {
+  display: flex;
+  align-items: center;
   gap: 8px;
 }
-
-.water-filter-grid label {
-  display: block;
-  margin-bottom: 3px;
+.global-filter-group label {
   font-size: 12px;
   font-weight: 600;
   color: var(--water-muted);
 }
-
-/* Override layout.css input/select */
-.water-filter-grid input,
-.water-filter-grid select {
-  width: 100%;
-  height: 32px;
-  padding: 4px 8px;
-  border: 1px solid #cbd5e1;
-  border-radius: 5px;
-  background: #ffffff;
-  color: #334155;
-  font-size: 13px;
-  box-sizing: border-box;
-}
-
-.water-filter-actions {
-  margin-top: 8px;
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-/* ======================================================
-   KPI cards
-   ====================================================== */
-
-.water-kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.water-kpi-card {
-  background: #ffffff;
-  border: 1px solid var(--water-border);
-  border-radius: 8px;
-  padding: 12px 10px;
-  text-align: center;
-}
-
-.water-kpi-card span {
-  display: block;
+.global-filter-group input, 
+.global-filter-group select {
+  padding: 4px 10px;
   font-size: 12px;
-  color: var(--water-muted);
+  border-radius: 6px;
+  border: 1px solid var(--water-border);
+  background-color: #f8fafc;
+  color: var(--water-text);
+  outline: none;
+  font-weight: 500;
 }
-
-.water-kpi-card h2 {
-  margin: 6px 0 0;
-  font-size: 28px;
-  font-weight: 700;
-  color: #1976d2;
+.global-filter-group input {
+  width: 135px;
+  text-align: center;
+  cursor: pointer;
 }
+.global-filter-btn {
+  padding: 4px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  background-color: #2196f3;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.global-filter-btn:hover { background-color: #1976d2; }
 
-/* ======================================================
-   Grid card chất lượng
-   ====================================================== */
-
-.water-quality-grid {
+/* ── Hàng chứa 3 Chart xu hướng (Phần dưới bộ lọc) ── */
+.chart-row-grid {
+  flex: 1; /* Tỷ lệ chiều cao phần Biểu đồ */
+  min-height: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 10px;
-  padding: 4px 0;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
 }
 
+/* ── Cấu trúc Thẻ KPI (Hàng 1) ── */
 .water-quality-card {
   background: #ffffff;
   border: 1px solid var(--water-border);
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  height: 100%;
 }
 
 .water-station-header {
   background: linear-gradient(135deg, #2196f3, #1976d2);
-  padding: 8px 12px;
+  padding: 8px 14px; 
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 6px;
+  flex: 0 0 auto;
 }
 
 .water-station-name {
   color: #ffffff !important;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px; 
 }
 
 .water-station-time {
-  font-size: 10px;
-  color: var(--water-muted);
-  padding: 3px 12px 0;
-  margin-bottom: -2px;
-}
-
-.water-quality-values {
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.water-quality-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 4px 8px;
-  border-radius: 5px;
-  background: #f8fafc;
-  border: 1px solid var(--water-border);
-}
-
-.water-quality-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--water-muted);
-  min-width: 50px;
-}
-
-.water-quality-value {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--water-text);
-}
-
-.water-quality-unit {
   font-size: 11px;
   color: var(--water-muted);
-  min-width: 30px;
-  text-align: right;
+  padding: 6px 14px 0;
+  flex: 0 0 auto;
 }
 
-/* ======================================================
-   Summary
-   ====================================================== */
-
-.water-summary {
-  font-size: 13px;
-  color: var(--water-muted);
-  margin-bottom: 6px;
-}
-
-/* ======================================================
-   Bảng dữ liệu
-   ====================================================== */
-
-.water-table-card {
-  flex: 1;
+/* ── KHU VỰC GRID 2X2 CHIẾM HẾT KHÔNG GIAN DƯ THỪA ── */
+.water-quality-values {
+  padding: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 cột bằng nhau */
+  grid-template-rows: repeat(2, 1fr);    /* 2 hàng bằng nhau */
+  gap: 12px;                             /* Khoảng cách thông thoáng giữa các ô */
+  flex: 1;                               /* Giãn trọn vẹn chiều cao card */
   min-height: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.water-table-wrap {
-  flex: 1;
-  overflow: auto;
-  border: 1px solid var(--water-border);
-  border-radius: 6px;
-}
-
-.water-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #ffffff;
-}
-
-.water-table th,
-.water-table td {
-  padding: 6px 8px;
-  border: 1px solid #e5e7eb;
-  white-space: nowrap;
-  text-align: center;
-  font-size: 12px;
-  color: var(--water-text);
-}
-
-.water-table th {
-  background: #f8fafc;
-  font-weight: 700;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.water-table tbody tr:hover td { background: #eff6ff; }
-
-/* ======================================================
-   Trạng thái — !important để thắng color: inherit
-   ====================================================== */
-
-.status-good { color: #16a34a !important; font-weight: 700; }
-.status-warn { color: #ea580c !important; font-weight: 700; }
-.status-bad  { color: #dc2626 !important; font-weight: 700; }
-
-/* ======================================================
-   Empty state
-   ====================================================== */
-
-.water-empty {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--water-muted);
-  font-size: 14px;
-}
-
-/* ======================================================
-   Badge
-   ====================================================== */
-
-.water-badge {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 7px;
-  border-radius: 10px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.water-badge.online  { background: rgba(22, 163, 74, 0.2);  color: #bbf7d0 !important; }
-.water-badge.offline { background: rgba(220, 38, 38, 0.2);  color: #fecaca !important; }
-
-/* ======================================================
-   Card offline
-   ====================================================== */
-
-.water-quality-card.offline .water-station-header {
-  background: linear-gradient(135deg, #64748b, #475569);
-}
-
-.water-quality-card.offline .water-quality-values { opacity: 0.55; }
-
-/* ======================================================
-   Responsive
-   ====================================================== */
-
-@media (max-width: 1200px) {
-  .water-filter-grid,
-  .water-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-
-@media (max-width: 700px) {
-  .water-filter-grid,
-  .water-kpi-grid,
-  .water-quality-grid { grid-template-columns: 1fr; }
-}
-
-/* Thêm các định nghĩa CSS sau đây vào cuối file quality-water.css hiện tại của bạn */
-
-/* ======================================================
-   Hiệu ứng hover card trạm
-   ====================================================== */
-.water-quality-card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.water-quality-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-}
-
-/* ======================================================
-   Modal phong cách hiện đại cho Chart
-   ====================================================== */
-.water-modal {
-  display: none; 
-  position: fixed; 
-  z-index: 9999; 
-  left: 0;
-  top: 0;
-  width: 100%; 
-  height: 100%; 
-  overflow: hidden; 
-  background-color: rgba(15, 23, 42, 0.6); /* Lớp phủ đen mờ */
-  backdrop-filter: blur(4px); /* Làm mờ nhẹ background phía sau */
-  align-items: center;
-  justify-content: center;
   box-sizing: border-box;
 }
 
-.water-modal-content {
-  background-color: #ffffff;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 700px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
-  animation: modalFadeIn 0.3s ease;
+/* ── Ô THÔNG SỐ CHUNG (GIỮ NGUYÊN NỀN SÁNG LIGHT MODE) ── */
+.water-quality-item {
   display: flex;
-  flex-direction: column;
+  flex-direction: column;    
+  justify-content: space-between; /* Đẩy hàng tiêu đề lên top, cụm số xuống bottom */
+  align-items: flex-start;   
+  padding: 10px 14px;        
+  border-radius: 6px;
+  background: #f8fafc;       
+  border: 1px solid var(--water-border);
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+  min-width: 0; /* Chống bể chữ/tràn viền khi màn hình co giãn nhỏ */
 }
 
-@keyframes modalFadeIn {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
+.water-quality-item:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
 }
 
-.water-modal-header {
-  padding: 14px 20px;
-  background: #f8fafc;
-  border-bottom: 1px solid var(--water-border);
+/* Hàng đỉnh đầu trong ô thông số (Nhãn trái - Chữ trạng thái phải) */
+.water-item-top-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
-}
-
-.water-modal-header h3 {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-  color: #1e293b;
-}
-
-.water-modal-close {
-  color: #94a3b8;
-  font-size: 26px;
-  font-weight: bold;
-  cursor: pointer;
-  line-height: 1;
-  transition: color 0.2s;
-}
-
-.water-modal-close:hover {
-  color: #475569;
-}
-
-.water-modal-body {
-  padding: 20px;
-  background-color: #ffffff;
-  border-bottom-left-radius: 12px;
-  border-bottom-right-radius: 12px;
-}
-
-/* Container bọc canvas đảm bảo responsive tỷ lệ chiều cao */
-.chart-container {
-  position: relative;
-  height: 320px;
   width: 100%;
+  margin-bottom: 4px;
+}
+
+.water-quality-label {
+  font-size: 11px;           
+  font-weight: 700;
+  color: #64748b;            
+  text-transform: uppercase; /* Viết hoa nhãn cho hiện đại giống SCADA */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.water-quality-status-text {
+  font-size: 10px;
+  font-weight: 700;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+/* Cụm chứa Giá trị và Đơn vị nằm sát đáy ô */
+.water-quality-value-group {
+  display: flex;
+  align-items: baseline;     
+  gap: 4px;
+  width: 100%;
+  margin-top: auto;          /* Neo chặt cụm số ở cạnh đáy */
+  min-width: 0;
+}
+
+/* CÂN ĐỐI KÍCH THƯỚC CHỮ: Hạ xuống 22px để vừa vặn, tinh tế và chuyên nghiệp */
+.water-quality-value {
+  font-size: 22px;           
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.water-quality-unit {
+  font-size: 11px;           
+  color: #94a3b8;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── ĐỒNG BỘ 4 TÔNG MÀU ĐẶC TRƯNG TƯƠNG ỨNG MÀU BIỂU ĐỒ ── */
+
+/* 1. Chỉ số pH: Màu xanh dương */
+.water-quality-item.param-ph { border-left: 4px solid #2563eb; }
+.water-quality-item.param-ph .water-quality-value { color: #2563eb; }
+.water-quality-item.param-ph .water-quality-status-text { color: #2563eb; }
+
+/* 2. Chỉ số TDS: Màu lục ngọc (Emerald giống màu biểu đồ mới) */
+.water-quality-item.param-tds { border-left: 4px solid #10b981; }
+.water-quality-item.param-tds .water-quality-value { color: #10b981; }
+.water-quality-item.param-tds .water-quality-status-text { color: #10b981; }
+
+/* 3. Chỉ số Amino: Màu cam hổ phách */
+.water-quality-item.param-amino { border-left: 4px solid #f59e0b; }
+.water-quality-item.param-amino .water-quality-value { color: #f59e0b; }
+.water-quality-item.param-amino .water-quality-status-text { color: #f59e0b; }
+
+/* 4. Chỉ số Nitrat: Màu đỏ hồng / Đỏ đậm */
+.water-quality-item.param-nitrat { border-left: 4px solid #ef4444; }
+.water-quality-item.param-nitrat .water-quality-value { color: #ef4444; }
+.water-quality-item.param-nitrat .water-quality-status-text { color: #ef4444; }
+
+
+/* ── ĐÈ MÀU CẢNH BÁO TRẠNG THÁI (Ưu tiên hiển thị khi vượt ngưỡng) ── */
+.water-quality-item.status-warn .water-quality-status-text { color: #ea580c !important; }
+.water-quality-item.status-bad .water-quality-status-text  { color: #dc2626 !important; }
+
+/* ── Cấu trúc chứa Chart ── */
+.chart-item-box {
+  height: 100%; 
+  background: #fafafa; 
+  border: 1px solid var(--water-border); 
+  border-radius: 8px; 
+  padding: 10px; 
+  box-sizing: border-box;
+  min-height: 0;
+}
+.chart-item-box canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Trạng thái Online/Offline Badge của trạm */
+.water-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px; }
+.water-badge.online  { background: rgba(22, 163, 74, 0.15);  color: #22c55e !important; }
+.water-badge.offline { background: rgba(220, 38, 38, 0.1);  color: #ef4444 !important; }
+
+.water-quality-card.offline .water-station-header { background: linear-gradient(135deg, #64748b, #475569); }
+.water-quality-card.offline .water-quality-values { opacity: 0.6; }
+.water-empty { text-align: center; padding: 30px; color: var(--water-muted); font-size: 13px; width: 100%; grid-column: span 3; }
+
+/* Responsive cho thiết bị di động / màn hình nhỏ */
+@media (max-width: 900px) {
+  .kpi-row-grid, .chart-row-grid { grid-template-columns: 1fr; flex: none; height: auto; }
+  .page-content { overflow-y: auto; }
 }
