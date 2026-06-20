@@ -10,6 +10,7 @@
 
 <script src="/shared/auth.js"></script>
 <script src="/shared/layout.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
 </head>
 
 <body>
@@ -17,12 +18,10 @@
 
 <main class="page-content water-page">
 
-    <!-- Tiêu đề -->
     <div class="water-title">
       <h2>CHẤT LƯỢNG NƯỚC SCADA</h2>
     </div>
 
-    <!-- KPI summary bar -->
     <div class="water-kpi-grid" id="kpiBar">
       <div class="water-kpi-card">
         <span>Tổng trạm SCADA</span>
@@ -42,7 +41,6 @@
       </div>
     </div>
 
-    <!-- Bộ lọc -->
     <div class="water-card water-filter-card">
       <div class="water-filter-grid">
 
@@ -86,27 +84,101 @@
       </div>
     </div>
 
-    <!-- Grid cards -->
     <div class="water-card">
       <div class="water-summary" id="summary">Đang tải dữ liệu...</div>
       <div class="water-quality-grid" id="qualityGrid"></div>
     </div>
 
+</main>
 
+<div id="chartModal" class="water-modal">
+  <div class="water-modal-content water-modal-wide">
+    <div class="water-modal-header">
+      <h3 id="modalStationName">Tên trạm</h3>
+      <span class="water-modal-close" onclick="closeChartModal()">&times;</span>
+    </div>
+    <div class="water-modal-body">
+      <div class="chart-triple-grid">
+        <div class="chart-triple-item">
+          <div class="chart-triple-title" id="chartTitle0"></div>
+          <div class="chart-container-small"><canvas id="chart0"></canvas></div>
+        </div>
+        <div class="chart-triple-item">
+          <div class="chart-triple-title" id="chartTitle1"></div>
+          <div class="chart-container-small"><canvas id="chart1"></canvas></div>
+        </div>
+        <div class="chart-triple-item">
+          <div class="chart-triple-title" id="chartTitle2"></div>
+          <div class="chart-container-small"><canvas id="chart2"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* ── 3-chart modal layout ── */
+.water-modal-wide { max-width: 960px !important; width: 95% !important; }
+
+.chart-triple-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.chart-triple-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chart-triple-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+
+.chart-container-small {
+  position: relative;
+  height: 220px;
+  width: 100%;
+}
+
+.chart-container-small canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+@media (max-width: 700px) {
+  .chart-triple-grid { grid-template-columns: 1fr; }
+  .chart-container-small { height: 180px; }
+}
+</style>
 
 <script>
 // ── Hằng số ────────────────────────────────────────────────────────────────
-// Các tag chất lượng nước cần hiển thị — đúng với key trả về từ API
 const QUALITY_TAGS = ["pH", "TDS", "amino", "nitrat"];
-
-// Trạm được coi là online nếu có data trong vòng 30 phút (copy từ logger-map)
 const ONLINE_THRESHOLD_MS = 30 * 60 * 1000;
 
-// ── State ──────────────────────────────────────────────────────────────────
-let cachedStations = []; // data thô từ /api/logger/readings/map
-let refreshTimer   = null;
+const PARAM_CONFIGS = {
+  pH:     { label: 'pH',           color: '#2563eb' },
+  TDS:    { label: 'TDS (mg/L)',   color: '#16a34a' },
+  amino:  { label: 'Amino (mg/L)', color: '#ea580c' },
+  nitrat: { label: 'Nitrat (mg/L)',color: '#dc2626' }
+};
 
-// ── Helpers (copy pattern từ logger-map.html) ──────────────────────────────
+// ── State ──────────────────────────────────────────────────────────────────
+let cachedStations = [];
+let refreshTimer   = null;
+// activeCharts = [] được khai báo cùng openChartModal bên dưới
+
+// ── Helpers ────────────────────────────────────────────────────────────────
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -123,7 +195,6 @@ function formatNumber(value, decimals = 2) {
   return new Intl.NumberFormat("vi-VN", { maximumFractionDigits: decimals }).format(n);
 }
 
-// Copy từ logger-map: online nếu có tag với data_ts trong vòng 30 phút
 function isLoggerOnline(station) {
   if (Number(station.enabled) === 0) return false;
   const tags = Object.values(station.tags || {});
@@ -140,21 +211,20 @@ function getQualityClass(tagKey, value) {
   const v = Number(value);
   if (isNaN(v)) return "";
   switch (tagKey) {
-    case "pH":     return (v < 6.5 || v > 8.5) ? "status-bad" : "status-good";
-    case "TDS":    return v > 1000 ? "status-bad" : v > 500  ? "status-warn" : "status-good";
+    case "pH":     return (v < 6.5 || v > 8.5) ? "status-bad"  : "status-good";
+    case "TDS":    return v > 1000 ? "status-bad"  : v > 500 ? "status-warn" : "status-good";
     case "amino":  return v > 1    ? "status-warn" : "status-good";
     case "nitrat": return v > 50   ? "status-bad"  : v > 25  ? "status-warn" : "status-good";
     default:       return "";
   }
 }
 
-// Kiểm tra một trạm có thông số nào vượt ngưỡng không
 function hasAlert(station) {
   return QUALITY_TAGS.some(k => {
     const tag = (station.tags || {})[k];
     if (!tag) return false;
-    return getQualityClass(k, tag.value) !== "status-good" &&
-           getQualityClass(k, tag.value) !== "";
+    const cls = getQualityClass(k, tag.value);
+    return cls !== "status-good" && cls !== "";
   });
 }
 
@@ -169,7 +239,6 @@ async function api(url) {
 async function fetchMapData() {
   const json = await api("/api/logger/readings/map");
   if (!json.success) throw new Error(json.message || "API error");
-  // Chỉ lấy trạm SCADA
   cachedStations = (json.data || []).filter(
     s => s.source === "scada" || String(s.logger_id || "").startsWith("scada_")
   );
@@ -229,10 +298,7 @@ function renderCards(stations, parameterFilter) {
   const grid    = document.getElementById("qualityGrid");
   const summary = document.getElementById("summary");
 
-  // Chỉ hiện trạm có ít nhất 1 QUALITY_TAG
-  const visible = stations.filter(s =>
-    QUALITY_TAGS.some(k => s.tags && k in s.tags)
-  );
+  const visible = stations.filter(s => QUALITY_TAGS.some(k => s.tags && k in s.tags));
 
   if (visible.length === 0) {
     grid.innerHTML      = `<div class="water-empty">Không có dữ liệu chất lượng nước</div>`;
@@ -240,24 +306,17 @@ function renderCards(stations, parameterFilter) {
     return;
   }
 
-  summary.textContent = `Hiển thị ${visible.length} / ${cachedStations.length} trạm SCADA`;
+  summary.textContent = `Hiển thị ${visible.length} / ${cachedStations.length} trạm SCADA (Click vào card để xem biểu đồ)`;
 
   grid.innerHTML = visible.map(station => {
     const tags   = station.tags || {};
     const online = isLoggerOnline(station);
 
-    // Lấy quality tags có trong trạm, lọc theo parameterFilter
-    const keys = QUALITY_TAGS.filter(k =>
-      k in tags && (!parameterFilter || k === parameterFilter)
-    );
+    const keys = QUALITY_TAGS.filter(k => k in tags && (!parameterFilter || k === parameterFilter));
     if (keys.length === 0) return "";
 
-    // Timestamp mới nhất
-    const latestTs = keys
-      .map(k => tags[k].data_ts || "")
-      .filter(Boolean).sort().at(-1) || "";
+    const latestTs = keys.map(k => tags[k].data_ts || "").filter(Boolean).sort().at(-1) || "";
 
-    // Badge online/offline
     const badge = online
       ? `<span class="water-badge online">● Online</span>`
       : `<span class="water-badge offline">● Offline</span>`;
@@ -274,7 +333,7 @@ function renderCards(stations, parameterFilter) {
     }).join("");
 
     return `
-      <div class="water-quality-card${online ? "" : " offline"}">
+      <div class="water-quality-card${online ? "" : " offline"}" style="cursor:pointer;" onclick="openChartModal('${escapeHtml(station.logger_id)}')">
         <div class="water-station-header">
           <div class="water-station-name">${escapeHtml(station.name || station.logger_id)}</div>
           ${badge}
@@ -284,6 +343,93 @@ function renderCards(stations, parameterFilter) {
       </div>`;
   }).join("");
 }
+
+// ── Modal & 3 Charts side-by-side ─────────────────────────────────────────
+// Chart 0 = pH | Chart 1 = TDS | Chart 2 = Amino + Nitrat (cùng đơn vị mg/L)
+const CHART_GROUPS = [
+  { keys: ["pH"],            title: "pH" },
+  { keys: ["TDS"],           title: "TDS (mg/L)" },
+  { keys: ["amino","nitrat"],title: "Amino & Nitrat (mg/L)" }
+];
+
+let activeCharts = []; // lưu 3 Chart instance
+
+function openChartModal(loggerId) {
+  const station = cachedStations.find(s => s.logger_id === loggerId);
+  if (!station) return;
+
+  document.getElementById("modalStationName").textContent =
+    `XU HƯỚNG CHẤT LƯỢNG NƯỚC - ${station.name || station.logger_id}`;
+
+  document.getElementById("chartModal").style.display = "flex";
+
+  // Hủy 3 chart cũ
+  activeCharts.forEach(c => c && c.destroy());
+  activeCharts = [];
+
+  const mockTimestamps = ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00"];
+
+  setTimeout(() => {
+    CHART_GROUPS.forEach((group, idx) => {
+      // Tiêu đề nhỏ trên mỗi chart
+      document.getElementById("chartTitle" + idx).textContent = group.title;
+
+      const datasets = [];
+      group.keys.forEach(k => {
+        if (!station.tags || !station.tags[k]) return;
+        const currentVal = Number(station.tags[k].value) || 0;
+        const dataValues = mockTimestamps.map((_, i) => {
+          if (i === mockTimestamps.length - 1) return currentVal;
+          const factor = (Math.random() - 0.5) * currentVal * 0.1;
+          return Number((currentVal + factor).toFixed(2));
+        });
+        datasets.push({
+          label:           PARAM_CONFIGS[k].label,
+          data:            dataValues,
+          borderColor:     PARAM_CONFIGS[k].color,
+          backgroundColor: PARAM_CONFIGS[k].color + "1A",
+          borderWidth:     2,
+          tension:         0.3,
+          pointRadius:     3,
+          fill:            false
+        });
+      });
+
+      if (datasets.length === 0) { activeCharts.push(null); return; }
+
+      const ctx = document.getElementById("chart" + idx).getContext("2d");
+      const chart = new Chart(ctx, {
+        type: "line",
+        data: { labels: mockTimestamps, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: "top", labels: { boxWidth: 10, font: { size: 11 } } },
+            tooltip: { mode: "index", intersect: false }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+            y: { beginAtZero: false, grid: { color: "#e2e8f0" }, ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+      activeCharts.push(chart);
+    });
+  }, 50);
+}
+
+function closeChartModal() {
+  document.getElementById("chartModal").style.display = "none";
+  activeCharts.forEach(c => c && c.destroy());
+  activeCharts = [];
+}
+
+// Click ra ngoài modal thì đóng
+window.addEventListener("click", function(event) {
+  const modal = document.getElementById("chartModal");
+  if (event.target === modal) closeChartModal();
+});
 
 // ── Auto refresh ───────────────────────────────────────────────────────────
 function setupAutoRefresh() {

@@ -9,8 +9,10 @@ http://localhost:3000/api/logger/readings/map
 http://localhost:3000/test-logger-map.html
 http://localhost:3000/test-logger-api.html
 http://localhost:3000/logger-config.html
-
 http://localhost:3000/kpi-config.html
+
+
+
 
 
 

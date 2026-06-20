@@ -49,7 +49,21 @@ body.sidebar-hidden .page-content {
 /* ======================================================
    Tiêu đề trang
    ====================================================== */
+.chart-container{
+  position:relative;
+  width:100%;
+  height:450px;
+  min-height:450px;
+}
 
+#historyChart{
+  width:100% !important;
+  height:100% !important;
+}
+
+.water-modal{
+  z-index:99999;
+}
 .water-title {
   display: flex;
   align-items: center;
@@ -341,4 +355,97 @@ body.sidebar-hidden .page-content {
   .water-filter-grid,
   .water-kpi-grid,
   .water-quality-grid { grid-template-columns: 1fr; }
+}
+
+/* Thêm các định nghĩa CSS sau đây vào cuối file quality-water.css hiện tại của bạn */
+
+/* ======================================================
+   Hiệu ứng hover card trạm
+   ====================================================== */
+.water-quality-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.water-quality-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* ======================================================
+   Modal phong cách hiện đại cho Chart
+   ====================================================== */
+.water-modal {
+  display: none; 
+  position: fixed; 
+  z-index: 9999; 
+  left: 0;
+  top: 0;
+  width: 100%; 
+  height: 100%; 
+  overflow: hidden; 
+  background-color: rgba(15, 23, 42, 0.6); /* Lớp phủ đen mờ */
+  backdrop-filter: blur(4px); /* Làm mờ nhẹ background phía sau */
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.water-modal-content {
+  background-color: #ffffff;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 700px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+  animation: modalFadeIn 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.water-modal-header {
+  padding: 14px 20px;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--water-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+.water-modal-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.water-modal-close {
+  color: #94a3b8;
+  font-size: 26px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.water-modal-close:hover {
+  color: #475569;
+}
+
+.water-modal-body {
+  padding: 20px;
+  background-color: #ffffff;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+/* Container bọc canvas đảm bảo responsive tỷ lệ chiều cao */
+.chart-container {
+  position: relative;
+  height: 320px;
+  width: 100%;
 }
