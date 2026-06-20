@@ -6,669 +6,19 @@
 
   <link rel="stylesheet" href="/shared/layout.css">
   <link rel="stylesheet" href="/shared/gauge.css">
+  <link rel="stylesheet" href="/index.css">
 
   <script src="/shared/auth.js"></script>
   <script src="/shared/layout.js"></script>
   <script src="/shared/gauge.js"></script>
-
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <style>
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 16px;
-    }
-
-    .summary-row {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-    }
-
-    .summary-box {
-      background: #f8fafc;
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      padding: 12px;
-    }
-
-    .summary-box b {
-      display: block;
-      font-size: 22px;
-      margin-top: 6px;
-    }
-
-    .dashboard-gauge-section {
-      display: grid !important;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) !important;
-      gap: 8px !important;
-      height: 210px !important;
-      min-height: 210px !important;
-      overflow: hidden !important;
-      padding: 0 !important;
-    }
-
-    .dashboard-gauge-section .gauge-item {
-      height: 210px !important;
-      min-height: 210px !important;
-      background: #f8fafc !important;
-      border: 1px solid #e5e7eb !important;
-      border-radius: 10px !important;
-      box-shadow: none !important;
-      padding: 0 !important;
-      margin: 0 !important;
-      overflow: hidden !important;
-
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-    }
-
-    .dashboard-gauge-section .gauge-item > div {
-      width: 100% !important;
-      height: 100% !important;
-    }
-
-    .dashboard-gauge-section .scada-gauge {
-      width: 100% !important;
-      height: 100% !important;
-      padding: 0 !important;
-      margin: 0 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-    }
-
-    .dashboard-gauge-section .scada-gauge-container {
-      width: 100% !important;
-      height: 100% !important;
-      padding: 0 !important;
-      margin: 0 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-    }
-
-    .dashboard-gauge-section svg {
-      width: 100% !important;
-      height: 205px !important;
-      max-height: 205px !important;
-      display: block !important;
-    }
-
-    
-
-    .kpi-toolbar {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    .kpi-toolbar input,
-    .kpi-toolbar select {
-      width: 180px;
-    }
-
-    .chart-wrap {
-      width: 100%;
-      height: 420px;
-    }
-
-    .multi-select {
-      position: relative;
-      width: 260px;
-    }
-
-    .multi-select-btn {
-      width: 100%;
-      background: white;
-      color: #1f2937;
-      border: 1px solid #cbd5e1;
-      text-align: left;
-    }
-
-    .multi-select-list {
-      display: none;
-      position: absolute;
-      z-index: 1000;
-      top: 42px;
-      left: 0;
-      min-width: 280px;
-      max-height: 280px;
-      overflow: auto;
-      background: white;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      padding: 8px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-    }
-
-    .multi-select.active .multi-select-list {
-      display: block;
-    }
-
-    .multi-select-list label {
-      display: block;
-      padding: 5px;
-      font-size: 13px;
-      cursor: pointer;
-    }
-
-    .multi-select-list input {
-      width: auto;
-      margin-right: 6px;
-    }
-
-    .alarm-table tr.alarm-high {
-      background: #fee2e2;
-    }
-
-    .alarm-table tr.alarm-low {
-      background: #ffedd5;
-    }
-
-    .alarm-table tr:hover {
-      background: #fef3c7;
-    }
-
-    .alarm-status {
-      font-weight: bold;
-    }
-
-    .alarm-high .alarm-status {
-      color: #dc2626;
-    }
-
-    .alarm-low .alarm-status {
-      color: #ea580c;
-    }
-
-    .empty-text {
-      color: #64748b;
-      font-style: italic;
-      padding: 12px;
-    }
-
-    .kpi-gauge-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 10px;
-    }
-
-    .kpi-gauge-header h3 {
-      margin: 0;
-    }
-
-    .kpi-gauge-header select {
-      width: 180px;
-    }
-
-    @media (max-width: 1200px) {
-      .summary-row {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .dashboard-gauge-section {
-        grid-template-columns: repeat(2, 1fr) !important;
-      }
-    }
-
-    #kpiGauges {
-      display: grid !important;
-      /* grid-template-columns: repeat(4, minmax(260px, 1fr)) !important; */
-      grid-template-columns: repeat(var(--kpi-count, 5), minmax(160px, 1fr)) !important;
-      gap: 12px !important;
-      height: auto !important;
-      min-height: 300px !important;
-      overflow: visible !important;
-    }
-
-    #kpiGauges .gauge-item {
-      height: 300px !important;
-      min-height: 300px !important;
-      /* background: #0d1b3e !important; */
-      border-radius: 5px !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      overflow: visible !important;
-    }
-
-    #kpiGauges .gauge-item > div {
-      width: 100% !important;
-      height: 100% !important;
-    }
-
-    #kpiGauges .scada-gauge,
-    #kpiGauges .scada-gauge-container {
-      width: 100% !important;
-      height: 100% !important;
-      min-height: 280px !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-    }
-
-    #kpiGauges svg {
-      width: 100% !important;
-      height: 280px !important;
-      max-height: 280px !important;
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-    }
-
-    /* ===== FIX FULL SCREEN - NO VERTICAL PAGE SCROLL ===== */
-    html,
-    body {
-      height: 100%;
-      overflow: hidden !important;
-    }
-
-    body {
-      margin: 0;
-    }
-
-    .page-content {
-      height: calc(100vh - var(--header-height, 70px)) !important;
-      overflow: hidden !important;
-      padding: 12px !important;
-      box-sizing: border-box !important;
-      background: #eef2f7;
-    }
-
-    .dashboard-grid {
-      height: 100% !important;
-      display: grid !important;
-      grid-template-rows: 34% 32% 34% !important;
-      grid-template-columns: 1fr !important;
-      gap: 10px !important;
-      overflow: hidden !important;
-    }
-
-    .card {
-      min-height: 0 !important;
-      overflow: hidden !important;
-      border-radius: 14px !important;
-      padding: 12px !important;
-      box-sizing: border-box !important;
-      background: #ffffff !important;
-      border: 1px solid #e2e8f0 !important;
-      box-shadow: 0 4px 16px rgba(15, 23, 42, .06) !important;
-    }
-
-    .card h3 {
-      margin: 0 0 8px 0 !important;
-      font-size: 16px !important;
-      color: #0f172a !important;
-    }
-
-    .kpi-gauge-header {
-      height: 34px !important;
-      margin-bottom: 6px !important;
-    }
-
-    .kpi-gauge-header label {
-      font-size: 12px !important;
-      margin-right: 6px !important;
-    }
-
-    .kpi-gauge-header select {
-      height: 30px !important;
-      width: 150px !important;
-    }
-
-    #kpiGauges {
-      height: calc(100% - 40px) !important;
-      min-height: 0 !important;
-      display: grid !important;
-      grid-template-columns: repeat(var(--kpi-count, 4), minmax(130px, 1fr)) !important;
-      gap: 8px !important;
-      overflow: hidden !important;
-    }
-
-    #kpiGauges .gauge-item {
-      height: 100% !important;
-      min-height: 0 !important;
-      overflow: hidden !important;
-      border-radius: 12px !important;
-      background: #f8fafc !important;
-      border: 1px solid #e2e8f0 !important;
-    }
-
-    #kpiGauges .scada-gauge,
-    #kpiGauges .scada-gauge-container,
-    #kpiGauges .gauge-item > div {
-      height: 100% !important;
-      min-height: 0 !important;
-      width: 100% !important;
-    }
-
-    #kpiGauges svg {
-      width: 100% !important;
-      height: 100% !important;
-      max-height: 100% !important;
-    }
-
-    .kpi-toolbar {
-      height: 34px !important;
-      margin-bottom: 6px !important;
-      gap: 6px !important;
-      overflow: hidden !important;
-      flex-wrap: nowrap !important;
-    }
-
-    .kpi-toolbar label {
-      font-size: 12px !important;
-      white-space: nowrap !important;
-    }
-
-    .kpi-toolbar input,
-    .kpi-toolbar select,
-    .kpi-toolbar button,
-    .multi-select-btn {
-      height: 30px !important;
-      font-size: 12px !important;
-      padding: 4px 8px !important;
-      box-sizing: border-box !important;
-    }
-
-    .kpi-toolbar input,
-    .kpi-toolbar select {
-      width: 145px !important;
-    }
-
-    .multi-select {
-      width: 180px !important;
-      flex: 0 0 180px !important;
-    }
-
-    .chart-wrap {
-      height: calc(100% - 74px) !important;
-      min-height: 0 !important;
-    }
-
-    .alarm-table {
-      width: 100% !important;
-      border-collapse: collapse !important;
-      font-size: 12px !important;
-    }
-
-    .alarm-table th,
-    .alarm-table td {
-      padding: 6px 8px !important;
-    }
-
-    .card:last-child {
-      overflow: hidden !important;
-    }
-
-    .card:last-child table {
-      display: table !important;
-    }
-
-    .card:last-child {
-      position: relative !important;
-    }
-
-    #alarmTable {
-      overflow: hidden !important;
-    }
-
-    @media (max-width: 1200px) {
-      .dashboard-grid {
-        grid-template-rows: 38% 31% 31% !important;
-      }
-
-      #kpiGauges {
-        grid-template-columns: repeat(2, minmax(140px, 1fr)) !important;
-      }
-    }
-
-
-    /* ===== LAYOUT MỚI: GAUGE TRÊN, CHART | CẢNH BÁO DƯỚI ===== */
-    html,
-    body {
-      height: 100%;
-      margin: 0;
-      overflow: hidden !important;
-    }
-
-    .page-content {
-      height: calc(100vh - var(--header-height, 70px)) !important;
-      overflow: hidden !important;
-      padding: 12px !important;
-      box-sizing: border-box !important;
-      background: #eef2f7 !important;
-    }
-
-    .dashboard-grid {
-      height: 100% !important;
-      min-height: 0 !important;
-      display: grid !important;
-      grid-template-rows: minmax(245px, 42%) minmax(0, 58%) !important;
-      grid-template-columns: 1fr !important;
-      gap: 12px !important;
-      overflow: hidden !important;
-    }
-
-    .bottom-grid {
-      /* height: 100% !important;
-      min-height: 0 !important;
-      display: grid !important;
-      grid-template-columns: minmax(0, 1.35fr) minmax(360px, .65fr) !important;
-      gap: 12px !important;
-      overflow: hidden !important; */
-      height: 100% !important;
-      min-height: 0 !important;
-      display: grid !important;
-      /* Chia đều 2 cột */
-      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-      gap: 12px !important;
-      overflow: hidden !important;
-    }
-
-    .card {
-      min-height: 0 !important;
-      overflow: hidden !important;
-      border-radius: 14px !important;
-      padding: 12px !important;
-      box-sizing: border-box !important;
-      background: #ffffff !important;
-      border: 1px solid #e2e8f0 !important;
-      box-shadow: 0 4px 16px rgba(15, 23, 42, .06) !important;
-    }
-
-    .card h3 {
-      margin: 0 0 8px 0 !important;
-      font-size: 16px !important;
-      line-height: 1.2 !important;
-      color: #0f172a !important;
-    }
-
-    .kpi-gauge-header {
-      height: 34px !important;
-      margin-bottom: 8px !important;
-    }
-
-    .kpi-gauge-header label {
-      font-size: 12px !important;
-      margin-right: 6px !important;
-    }
-
-    .kpi-gauge-header select {
-      height: 30px !important;
-      width: 155px !important;
-    }
-
-    #kpiGauges {
-      height: calc(100% - 42px) !important;
-      min-height: 0 !important;
-      display: grid !important;
-      grid-template-columns: repeat(var(--kpi-count, 4), minmax(130px, 1fr)) !important;
-      gap: 10px !important;
-      overflow: hidden !important;
-    }
-
-    #kpiGauges .gauge-item {
-      height: 100% !important;
-      min-height: 0 !important;
-      overflow: hidden !important;
-      border-radius: 12px !important;
-      background: #f8fafc !important;
-      border: 1px solid #e2e8f0 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-    }
-
-    #kpiGauges .gauge-item > div,
-    #kpiGauges .scada-gauge,
-    #kpiGauges .scada-gauge-container {
-      width: 100% !important;
-      height: 100% !important;
-      min-height: 0 !important;
-    }
-
-    #kpiGauges svg {
-      width: 100% !important;
-      height: 100% !important;
-      max-height: 100% !important;
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-    }
-
-    .chart-card,
-    .alarm-card {
-      height: 100% !important;
-      min-height: 0 !important;
-    }
-
-    .kpi-toolbar {
-      min-height: 32px !important;
-      max-height: 68px !important;
-      margin-bottom: 8px !important;
-      gap: 6px !important;
-      overflow: hidden !important;
-      flex-wrap: wrap !important;
-      align-items: center !important;
-    }
-
-    .kpi-toolbar label {
-      font-size: 12px !important;
-      white-space: nowrap !important;
-    }
-
-    .kpi-toolbar input,
-    .kpi-toolbar select,
-    .kpi-toolbar button,
-    .multi-select-btn {
-      height: 28px !important;
-      font-size: 12px !important;
-      padding: 3px 8px !important;
-      box-sizing: border-box !important;
-    }
-
-    .kpi-toolbar input,
-    .kpi-toolbar select {
-      width: 135px !important;
-    }
-
-    .multi-select {
-      width: 170px !important;
-      flex: 0 0 170px !important;
-    }
-
-    .multi-select-list {
-      max-height: 220px !important;
-    }
-
-    .chart-wrap {
-      height: calc(100% - 106px) !important;
-      min-height: 0 !important;
-      width: 100% !important;
-    }
-
-    .alarm-card > button {
-      height: 28px !important;
-      font-size: 12px !important;
-      padding: 3px 10px !important;
-      margin-bottom: 8px !important;
-    }
-
-    .alarm-card br {
-      display: none !important;
-    }
-
-    .alarm-card {
-      display: flex !important;
-      flex-direction: column !important;
-    }
-
-    .alarm-table {
-      width: 100% !important;
-      border-collapse: collapse !important;
-      font-size: 12px !important;
-      table-layout: fixed !important;
-    }
-
-    .alarm-table thead {
-      display: table !important;
-      width: 100% !important;
-      table-layout: fixed !important;
-    }
-
-    .alarm-table tbody {
-      display: block !important;
-      height: calc(100% - 78px) !important;
-      overflow: hidden !important;
-      width: 100% !important;
-    }
-
-    .alarm-table tbody tr {
-      display: table !important;
-      width: 100% !important;
-      table-layout: fixed !important;
-    }
-
-    .alarm-table th,
-    .alarm-table td {
-      padding: 6px 6px !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-      white-space: nowrap !important;
-    }
-
-    .alarm-table th {
-      background: #0f172a !important;
-      color: #ffffff !important;
-      font-weight: 600 !important;
-    }
-
-    @media (max-width: 1200px) {
-      .dashboard-grid {
-        grid-template-rows: 45% 55% !important;
-      }
-
-      .bottom-grid {
-        grid-template-columns: 1fr 1fr !important;
-      }
-
-      #kpiGauges {
-        grid-template-columns: repeat(2, minmax(140px, 1fr)) !important;
-      }
-    }
-
-  </style>
 </head>
 
 <body>
+<script>
+  AppLayout.initLayout("Dashboard");
+</script>
+
 <main class="page-content">
   <div class="dashboard-grid">
     <div class="card">
@@ -691,80 +41,75 @@
     </div>
 
     <div class="bottom-grid">
-    <div class="card chart-card">
-      <h3>Biểu đồ toàn bộ KPI theo thời gian</h3>
+      <div class="card chart-card">
+        <h3>Biểu đồ toàn bộ KPI theo thời gian</h3>
 
-      <div class="kpi-toolbar">
-        <label>Từ ngày</label>
-        <input id="chartFrom" type="datetime-local">
+        <div class="kpi-toolbar">
+          <label>Từ ngày</label>
+          <input id="chartFrom" type="datetime-local">
 
-        <label>Đến ngày</label>
-        <input id="chartTo" type="datetime-local">
+          <label>Đến ngày</label>
+          <input id="chartTo" type="datetime-local">
 
-        <label>Chu kỳ</label>
-        <select id="chartInterval">
-          <option value="5m">5 phút</option>
-          <option value="10m">10 phút</option>
-          <option value="15m" selected>15 phút</option>
-          <option value="30m">30 phút</option>
-          <option value="1h">1 giờ</option>
-          <option value="2h">2 giờ</option>
-          <option value="6h">6 giờ</option>
-          <option value="1d">1 ngày</option>
-        </select>
+          <label>Chu kỳ</label>
+          <select id="chartInterval">
+            <option value="5m">5 phút</option>
+            <option value="10m">10 phút</option>
+            <option value="15m" selected>15 phút</option>
+            <option value="30m">30 phút</option>
+            <option value="1h">1 giờ</option>
+            <option value="2h">2 giờ</option>
+            <option value="6h">6 giờ</option>
+            <option value="1d">1 ngày</option>
+          </select>
 
-        <div class="multi-select" id="kpiDropdown">
-          <button type="button" class="multi-select-btn" onclick="toggleDropdown('kpiDropdown')">
-            Tất cả KPI
-          </button>
-          <div id="chartKpiCheckList" class="multi-select-list"></div>
+          <div class="multi-select" id="kpiDropdown">
+            <button type="button" class="multi-select-btn" onclick="toggleDropdown('kpiDropdown')">
+              Tất cả KPI
+            </button>
+            <div id="chartKpiCheckList" class="multi-select-list"></div>
+          </div>
+
+          <button onclick="setChartToday()">Hôm nay</button>
+          <button onclick="setChartMonth()">Tháng này</button>
+          <button onclick="loadAllKpiChart()">Xem chart</button>
         </div>
 
-        <button onclick="setChartToday()">Hôm nay</button>
-        <button onclick="setChartMonth()">Tháng này</button>
-        <button onclick="loadAllKpiChart()">Xem chart</button>
+        <div class="chart-wrap">
+          <canvas id="kpiChartCanvas"></canvas>
+        </div>
       </div>
 
-      <div class="chart-wrap">
-        <canvas id="kpiChartCanvas"></canvas>
+      <div class="card alarm-card">
+        <h3>Logger / Tag đang vi phạm cảnh báo</h3>
+
+        <button onclick="loadActiveAlarms()">Tải cảnh báo</button>
+
+        <table class="alarm-table">
+          <thead>
+            <tr>
+              <th>Logger</th>
+              <th>Tag</th>
+              <th>Giá trị</th>
+              <th>Min</th>
+              <th>Max</th>
+              <th>Trạng thái</th>
+              <th>Nguồn</th>
+              <th>Thời gian</th>
+            </tr>
+          </thead>
+          <tbody id="alarmTable">
+            <tr>
+              <td colspan="8" class="empty-text">Chưa có dữ liệu</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
-
-    <div class="card alarm-card">
-      <h3>Logger / Tag đang vi phạm cảnh báo</h3>
-
-      <button onclick="loadActiveAlarms()">Tải cảnh báo</button>
-
-      <br><br>
-
-      <table class="alarm-table">
-        <thead>
-          <tr>
-            <th>Logger</th>
-            <th>Tag</th>
-            <th>Giá trị</th>
-            <th>Min</th>
-            <th>Max</th>
-            <th>Trạng thái</th>
-            <th>Nguồn</th>
-            <th>Thời gian</th>
-          </tr>
-        </thead>
-        <tbody id="alarmTable">
-          <tr>
-            <td colspan="8" class="empty-text">Chưa có dữ liệu</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    </div>
-
   </div>
 </main>
 
 <script>
-AppLayout.initLayout("Dashboard");
-
 const currentUser = Auth.getCurrentUser();
 
 const welcomeUserEl = document.getElementById("welcomeUser");
@@ -812,7 +157,6 @@ function toApiDateTime(value) {
   if (!value) return "";
 
   const d = new Date(value);
-
   if (Number.isNaN(d.getTime())) return "";
 
   const pad = v => String(v).padStart(2, "0");
@@ -867,24 +211,6 @@ async function api(url, options = {}) {
   }
 }
 
-async function loadDashboardSummary() {
-  try {
-    const [health, map, kpis, alarms] = await Promise.all([
-      api("/api/health"),
-      api("/api/logger/readings/map"),
-      api("/api/logger/kpis"),
-      api("/api/logger/alarms/active")
-    ]);
-
-    totalLoggers.textContent = map.success ? map.data.length : "--";
-    totalKpis.textContent = kpis.success ? kpis.data.length : "--";
-    totalAlarms.textContent = alarms.success ? alarms.total : "--";
-    serverStatus.textContent = health.success ? "OK" : "ERROR";
-  } catch {
-    serverStatus.textContent = "ERROR";
-  }
-}
-
 async function loadKpiConfigs() {
   const listJson = await api("/api/logger/kpis");
 
@@ -894,6 +220,7 @@ async function loadKpiConfigs() {
   }
 
   kpiConfigs = listJson.data || [];
+
   const totalKpisEl = document.getElementById("totalKpis");
   if (totalKpisEl) {
     totalKpisEl.textContent = kpiConfigs.length;
@@ -912,21 +239,8 @@ async function loadKpiConfigs() {
   return kpiConfigs;
 }
 
-const KPI_GAUGE_COLORS = [
-  "#2563eb",
-  "#16a34a",
-  "#f59e0b",
-  "#dc2626",
-  "#7c3aed",
-  "#0891b2",
-  "#ea580c",
-  "#0f766e"
-];
-
 function getKpiGaugeValue(valueJson, metric) {
-  if (!valueJson || !valueJson.success) {
-    return 0;
-  }
+  if (!valueJson || !valueJson.success) return 0;
 
   if (metric === "current") {
     return valueJson.current?.value ?? valueJson.value ?? 0;
@@ -964,10 +278,12 @@ function getKpiGaugeTitle(kpi, metric) {
 
   return `${base} - ${labelMap[metric] || ""}`;
 }
+
 async function loadKpiGauges() {
   if (!window.ScadaGauge) {
     kpiGauges.innerHTML = `<div class="empty-text">Không tải được gauge.js</div>`;
-    kpiGauges.style.setProperty("--kpi-count", kpiConfigs.length || 1);
+    // kpiGauges.style.setProperty("--kpi-count", kpiConfigs.length || 1);
+    kpiGauges.style.setProperty("--kpi-count", Math.max(kpiConfigs.length, 1));
     return;
   }
 
@@ -1004,15 +320,9 @@ async function loadKpiGauges() {
       continue;
     }
 
-    // const value =
-    //   kpi.kpi_type === "kpi-total"
-    //     ? valueJson.today?.value ?? valueJson.value ?? 0
-    //     : valueJson.value ?? 0;
-
-    // const unit = valueJson.unit || (kpi.kpi_type === "kpi-total" ? "m³" : "m³/h");
-
     const metric = gaugeMetricSelect.value || "current";
     const value = getKpiGaugeValue(valueJson, metric);
+
     const unit =
       valueJson.unit ||
       (kpi.kpi_type === "kpi-total" ? "m³" : "m³/h");
@@ -1026,7 +336,8 @@ async function loadKpiGauges() {
       min: 0,
       max: maxValue,
       value,
-      title: getKpiGaugeTitle(kpi, metric),
+      // title: getKpiGaugeTitle(kpi, metric),
+      title: kpi.name || kpi.kpi_id,
       unit,
       color: kpi.kpi_type === "kpi-total" ? "#22C55E" : "#38BDF8",
       decimals: 0,
@@ -1084,10 +395,7 @@ async function loadAllKpiChart() {
     const json = await api(`/api/logger/kpis/${encodeURIComponent(kpi.kpi_id)}/history?${params.toString()}`);
 
     if (json.success) {
-      seriesResults.push({
-        kpi,
-        json
-      });
+      seriesResults.push({ kpi, json });
     }
   }
 
@@ -1143,9 +451,7 @@ async function loadAllKpiChart() {
         },
         tooltip: {
           callbacks: {
-            label: context => {
-              return `${context.dataset.label}: ${formatNumber(context.raw, 2)}`;
-            }
+            label: context => `${context.dataset.label}: ${formatNumber(context.raw, 2)}`
           }
         }
       },
@@ -1194,12 +500,10 @@ async function loadActiveAlarms() {
           <b>${escapeHtml(row.logger_name || row.logger_id)}</b><br>
           <small>${escapeHtml(row.logger_id)}</small>
         </td>
-
         <td>
           <b>${escapeHtml(row.tag_name || row.tag_key)}</b><br>
           <small>${escapeHtml(row.tag_key)}</small>
         </td>
-
         <td>${formatNumber(row.value, 2)} ${escapeHtml(row.unit || "")}</td>
         <td>${row.min_value ?? "--"}</td>
         <td>${row.max_value ?? "--"}</td>

@@ -7,7 +7,9 @@
       "afterbegin",
       `
       <header class="app-header">
-        <button class="icon-btn" id="toggleSidebar">☰</button>                
+        <button class="icon-btn" id="toggleSidebar">
+            <img src="/shared/logo.jpg" alt="Logo">
+        </button>
         <div class="header-info" style="margin-left: 20px; font-size: 14px; line-height: 1.4;">
           <div>CÔNG TY CỔ PHẦN CẤP NƯỚC CÀ MAU</div>
           <div>Địa chỉ: Số 204, đường Quang Trung, Khóm 26, phường Tân Thành, tỉnh Cà Mau</div>
@@ -15,18 +17,12 @@
         </div>        
         
         <div class="header-spacer"></div>
-        <div class="header-user">${user.fullname || user.username}</div>
+        <div class="header-user">${user.username}</div>
         <button class="logout-btn" onclick="Auth.logout()">Đăng xuất</button>
       </header>
 
       <aside class="app-sidebar">
-        <div class="sidebar-logo">
-          <img src="/shared/logo.jpg" alt="CAWACO Logo">
-          <div class="sidebar-logo-text">
-            <div>CAWACO</div>
-            <small>${pageTitle || "SCADA Dashboard"}</small>
-          </div>
-        </div>
+       
 
         <nav class="sidebar-menu">
           <a class="sidebar-link" href="/index.html">
