@@ -1,75 +1,307 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>KPI</title>
-  <link rel="stylesheet" href="/shared/layout.css">
-  <script src="/shared/auth.js"></script>
-  <script src="/shared/layout.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chất lượng nước</title>
+
+<link rel="stylesheet" href="/shared/layout.css">
+<link rel="stylesheet" href="/quality-water.css">
+
+<script src="/shared/auth.js"></script>
+<script src="/shared/layout.js"></script>
 </head>
 
 <body>
-<main class="page-content">
-  <div class="card">
-    <h2>KPI</h2>
-    <button onclick="loadKpis()">Tải KPI</button>
-  </div>
+<script>AppLayout.initLayout("Chất lượng nước");</script>
 
-  <div class="card">
-    <table>
-      <thead>
-        <tr>
-          <th>KPI ID</th>
-          <th>Tên</th>
-          <th>Loại</th>
-          <th>Giá trị</th>
-        </tr>
-      </thead>
-      <tbody id="kpiTable"></tbody>
-    </table>
-  </div>
-</main>
+<main class="page-content water-page">
+
+    <!-- Tiêu đề -->
+    <div class="water-title">
+      <h2>CHẤT LƯỢNG NƯỚC SCADA</h2>
+    </div>
+
+    <!-- KPI summary bar -->
+    <div class="water-kpi-grid" id="kpiBar">
+      <div class="water-kpi-card">
+        <span>Tổng trạm SCADA</span>
+        <h2 id="kpiTotal">--</h2>
+      </div>
+      <div class="water-kpi-card">
+        <span>Đang online</span>
+        <h2 id="kpiOnline" style="color:#16a34a !important">--</h2>
+      </div>
+      <div class="water-kpi-card">
+        <span>Offline / mất kết nối</span>
+        <h2 id="kpiOffline" style="color:#dc2626 !important">--</h2>
+      </div>
+      <div class="water-kpi-card">
+        <span>Thông số vượt ngưỡng</span>
+        <h2 id="kpiAlert" style="color:#ea580c !important">--</h2>
+      </div>
+    </div>
+
+    <!-- Bộ lọc -->
+    <div class="water-card water-filter-card">
+      <div class="water-filter-grid">
+
+        <div>
+          <label>Trạm SCADA</label>
+          <select id="stationFilter">
+            <option value="">Tất cả</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Thông số</label>
+          <select id="parameterFilter">
+            <option value="">Tất cả</option>
+            <option value="pH">pH</option>
+            <option value="TDS">TDS</option>
+            <option value="amino">Amino</option>
+            <option value="nitrat">Nitrat</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Trạng thái</label>
+          <select id="statusFilter">
+            <option value="">Tất cả</option>
+            <option value="online">Online</option>
+            <option value="offline">Offline</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Tự động cập nhật</label>
+          <select id="refreshInterval">
+            <option value="0">Tắt</option>
+            <option value="10">10 giây</option>
+            <option value="30" selected>30 giây</option>
+            <option value="60">60 giây</option>
+          </select>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Grid cards -->
+    <div class="water-card">
+      <div class="water-summary" id="summary">Đang tải dữ liệu...</div>
+      <div class="water-quality-grid" id="qualityGrid"></div>
+    </div>
+
+
 
 <script>
-AppLayout.initLayout("KPI");
+// ── Hằng số ────────────────────────────────────────────────────────────────
+// Các tag chất lượng nước cần hiển thị — đúng với key trả về từ API
+const QUALITY_TAGS = ["pH", "TDS", "amino", "nitrat"];
 
-async function loadKpis() {
-  const res = await fetch("/api/logger/kpis");
-  const json = await res.json();
+// Trạm được coi là online nếu có data trong vòng 30 phút (copy từ logger-map)
+const ONLINE_THRESHOLD_MS = 30 * 60 * 1000;
 
-  if (!json.success) return alert("Lỗi tải KPI");
+// ── State ──────────────────────────────────────────────────────────────────
+let cachedStations = []; // data thô từ /api/logger/readings/map
+let refreshTimer   = null;
 
-  kpiTable.innerHTML = "";
+// ── Helpers (copy pattern từ logger-map.html) ──────────────────────────────
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
 
-  for (const kpi of json.data) {
-    let valueText = "--";
+function formatNumber(value, decimals = 2) {
+  if (value === null || value === undefined || value === "") return "--";
+  const n = Number(value);
+  if (isNaN(n)) return String(value);
+  return new Intl.NumberFormat("vi-VN", { maximumFractionDigits: decimals }).format(n);
+}
 
-    try {
-      const valueRes = await fetch(`/api/logger/kpis/${encodeURIComponent(kpi.kpi_id)}/value`);
-      const valueJson = await valueRes.json();
+// Copy từ logger-map: online nếu có tag với data_ts trong vòng 30 phút
+function isLoggerOnline(station) {
+  if (Number(station.enabled) === 0) return false;
+  const tags = Object.values(station.tags || {});
+  if (!tags.length) return false;
+  const latestTs = tags.map(t => t.data_ts).filter(Boolean).sort().pop();
+  if (!latestTs) return false;
+  const ts = new Date(String(latestTs).replace(" ", "T"));
+  if (isNaN(ts.getTime())) return false;
+  return Date.now() - ts.getTime() <= ONLINE_THRESHOLD_MS;
+}
 
-      if (kpi.kpi_type === "kpi-flow") {
-        valueText = `${valueJson.value ?? 0} ${valueJson.unit || ""}`;
-      } else {
-        valueText = `
-          Ngày: ${valueJson.today?.value ?? 0} ${valueJson.unit || ""}<br>
-          Tháng: ${valueJson.month?.value ?? 0} ${valueJson.unit || ""}
-        `;
-      }
-    } catch {}
-
-    kpiTable.innerHTML += `
-      <tr>
-        <td>${kpi.kpi_id}</td>
-        <td>${kpi.name}</td>
-        <td>${kpi.kpi_type}</td>
-        <td>${valueText}</td>
-      </tr>
-    `;
+// ── Phân loại chất lượng ──────────────────────────────────────────────────
+function getQualityClass(tagKey, value) {
+  const v = Number(value);
+  if (isNaN(v)) return "";
+  switch (tagKey) {
+    case "pH":     return (v < 6.5 || v > 8.5) ? "status-bad" : "status-good";
+    case "TDS":    return v > 1000 ? "status-bad" : v > 500  ? "status-warn" : "status-good";
+    case "amino":  return v > 1    ? "status-warn" : "status-good";
+    case "nitrat": return v > 50   ? "status-bad"  : v > 25  ? "status-warn" : "status-good";
+    default:       return "";
   }
 }
 
-loadKpis();
+// Kiểm tra một trạm có thông số nào vượt ngưỡng không
+function hasAlert(station) {
+  return QUALITY_TAGS.some(k => {
+    const tag = (station.tags || {})[k];
+    if (!tag) return false;
+    return getQualityClass(k, tag.value) !== "status-good" &&
+           getQualityClass(k, tag.value) !== "";
+  });
+}
+
+// ── Fetch API ──────────────────────────────────────────────────────────────
+async function api(url) {
+  const res  = await fetch(url, { cache: "no-store" });
+  const text = await res.text();
+  try { return JSON.parse(text); }
+  catch { return { success: false, message: "API không trả JSON" }; }
+}
+
+async function fetchMapData() {
+  const json = await api("/api/logger/readings/map");
+  if (!json.success) throw new Error(json.message || "API error");
+  // Chỉ lấy trạm SCADA
+  cachedStations = (json.data || []).filter(
+    s => s.source === "scada" || String(s.logger_id || "").startsWith("scada_")
+  );
+}
+
+// ── KPI bar ────────────────────────────────────────────────────────────────
+function updateKpiBar(stations) {
+  const total   = stations.length;
+  const online  = stations.filter(s => isLoggerOnline(s)).length;
+  const offline = total - online;
+  const alert   = stations.filter(s => hasAlert(s)).length;
+
+  document.getElementById("kpiTotal").textContent   = total;
+  document.getElementById("kpiOnline").textContent  = online;
+  document.getElementById("kpiOffline").textContent = offline;
+  document.getElementById("kpiAlert").textContent   = alert;
+}
+
+// ── Station filter dropdown ────────────────────────────────────────────────
+function populateStationFilter() {
+  const select  = document.getElementById("stationFilter");
+  const current = select.value;
+  select.innerHTML =
+    `<option value="">Tất cả</option>` +
+    cachedStations.map(s =>
+      `<option value="${escapeHtml(s.logger_id)}"` +
+      (s.logger_id === current ? " selected" : "") +
+      `>${escapeHtml(s.name || s.logger_id)}</option>`
+    ).join("");
+}
+
+// ── Load + render ──────────────────────────────────────────────────────────
+async function loadQualityData() {
+  try {
+    await fetchMapData();
+    populateStationFilter();
+    updateKpiBar(cachedStations);
+
+    const stationId = document.getElementById("stationFilter").value;
+    const parameter = document.getElementById("parameterFilter").value;
+    const status    = document.getElementById("statusFilter").value;
+
+    let stations = [...cachedStations];
+    if (stationId) stations = stations.filter(s => s.logger_id === stationId);
+    if (status === "online")  stations = stations.filter(s =>  isLoggerOnline(s));
+    if (status === "offline") stations = stations.filter(s => !isLoggerOnline(s));
+
+    renderCards(stations, parameter);
+  } catch (err) {
+    console.error(err);
+    document.getElementById("summary").textContent = "Không tải được dữ liệu";
+  }
+}
+
+// ── Render cards ───────────────────────────────────────────────────────────
+function renderCards(stations, parameterFilter) {
+  const grid    = document.getElementById("qualityGrid");
+  const summary = document.getElementById("summary");
+
+  // Chỉ hiện trạm có ít nhất 1 QUALITY_TAG
+  const visible = stations.filter(s =>
+    QUALITY_TAGS.some(k => s.tags && k in s.tags)
+  );
+
+  if (visible.length === 0) {
+    grid.innerHTML      = `<div class="water-empty">Không có dữ liệu chất lượng nước</div>`;
+    summary.textContent = "0 trạm";
+    return;
+  }
+
+  summary.textContent = `Hiển thị ${visible.length} / ${cachedStations.length} trạm SCADA`;
+
+  grid.innerHTML = visible.map(station => {
+    const tags   = station.tags || {};
+    const online = isLoggerOnline(station);
+
+    // Lấy quality tags có trong trạm, lọc theo parameterFilter
+    const keys = QUALITY_TAGS.filter(k =>
+      k in tags && (!parameterFilter || k === parameterFilter)
+    );
+    if (keys.length === 0) return "";
+
+    // Timestamp mới nhất
+    const latestTs = keys
+      .map(k => tags[k].data_ts || "")
+      .filter(Boolean).sort().at(-1) || "";
+
+    // Badge online/offline
+    const badge = online
+      ? `<span class="water-badge online">● Online</span>`
+      : `<span class="water-badge offline">● Offline</span>`;
+
+    const rows = keys.map(k => {
+      const tag = tags[k];
+      const cls = getQualityClass(k, tag.value);
+      return `
+        <div class="water-quality-item">
+          <div class="water-quality-label">${escapeHtml(tag.tag_name || k)}</div>
+          <div class="water-quality-value ${escapeHtml(cls)}">${formatNumber(tag.value)}</div>
+          <div class="water-quality-unit">${escapeHtml(tag.unit || "")}</div>
+        </div>`;
+    }).join("");
+
+    return `
+      <div class="water-quality-card${online ? "" : " offline"}">
+        <div class="water-station-header">
+          <div class="water-station-name">${escapeHtml(station.name || station.logger_id)}</div>
+          ${badge}
+        </div>
+        <div class="water-station-time">${escapeHtml(latestTs)}</div>
+        <div class="water-quality-values">${rows}</div>
+      </div>`;
+  }).join("");
+}
+
+// ── Auto refresh ───────────────────────────────────────────────────────────
+function setupAutoRefresh() {
+  if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+  const sec = Number(document.getElementById("refreshInterval").value);
+  if (sec > 0) refreshTimer = setInterval(loadQualityData, sec * 1000);
+}
+
+// ── Events ─────────────────────────────────────────────────────────────────
+document.getElementById("stationFilter").addEventListener("change", loadQualityData);
+document.getElementById("parameterFilter").addEventListener("change", loadQualityData);
+document.getElementById("statusFilter").addEventListener("change", loadQualityData);
+document.getElementById("refreshInterval").addEventListener("change", setupAutoRefresh);
+
+// ── Init ───────────────────────────────────────────────────────────────────
+loadQualityData();
+setupAutoRefresh();
 </script>
+
 </body>
 </html>
