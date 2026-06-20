@@ -5,6 +5,7 @@
   <title>Lịch sử</title>
 
   <link rel="stylesheet" href="/shared/layout.css">
+  <link rel="stylesheet" href="/history.css">
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -12,186 +13,19 @@
 
   <script src="/shared/auth.js"></script>
   <script src="/shared/layout.js"></script>
-
-  <style>
-    .filter-grid {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 10px;
-      align-items: end;
-    }
-
-    .filter-actions {
-      margin-top: 12px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      align-items: center;
-    }
-
-    .multi-select {
-      position: relative;
-    }
-
-    .multi-select-btn {
-      width: 100%;
-      padding: 9px;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      background: white;
-      color: #1f2937;
-      text-align: left;
-      cursor: pointer;
-    }
-
-    .multi-select-list {
-      display: none;
-      position: absolute;
-      z-index: 1000;
-      top: 42px;
-      left: 0;
-      min-width: 280px;
-      max-height: 280px;
-      overflow: auto;
-      background: white;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      padding: 8px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-    }
-
-    .multi-select.active .multi-select-list {
-      display: block;
-    }
-
-    .multi-select-list label {
-      display: block;
-      padding: 5px;
-      font-size: 13px;
-      cursor: pointer;
-    }
-
-    .multi-select-list label:hover {
-      background: #f1f5f9;
-    }
-
-    .multi-select-list input {
-      width: auto;
-      margin-right: 6px;
-    }
-
-    .history-table-wrap {
-      overflow-x: auto;
-      overflow-y: visible;
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      background: white;
-    }
-
-    .pivot-table {
-      border-collapse: collapse;
-      min-width: 1200px;
-      width: max-content;
-    }
-
-    .pivot-table th,
-    .pivot-table td {
-      border: 1px solid #e5e7eb;
-      padding: 8px;
-      text-align: center;
-      white-space: nowrap;
-      font-size: 13px;
-    }
-
-    .pivot-table thead th {
-      background: #f8fafc;
-    }
-
-    .time-col {
-      position: sticky;
-      left: 0;
-      background: white;
-      z-index: 3;
-      font-weight: bold;
-      min-width: 170px;
-      text-align: left !important;
-    }
-
-    .pivot-table thead .time-col {
-      z-index: 8;
-      background: #f8fafc;
-    }
-
-    .pivot-table tbody tr:hover td {
-      background: #fff7ed !important;
-    }
-
-    .logger-head {
-      color: #0f172a;
-      font-weight: bold;
-    }
-
-    .tag-head {
-      color: #334155;
-    }
-
-    .group-0 { background: #dbeafe !important; }
-    .group-1 { background: #dcfce7 !important; }
-    .group-2 { background: #fef3c7 !important; }
-    .group-3 { background: #fce7f3 !important; }
-    .group-4 { background: #ede9fe !important; }
-    .group-5 { background: #ccfbf1 !important; }
-
-    .cell-group-0 { background: #eff6ff; }
-    .cell-group-1 { background: #f0fdf4; }
-    .cell-group-2 { background: #fffbeb; }
-    .cell-group-3 { background: #fdf2f8; }
-    .cell-group-4 { background: #f5f3ff; }
-    .cell-group-5 { background: #f0fdfa; }
-
-    .empty-cell {
-      color: #94a3b8;
-    }
-
-    .value-cell {
-      font-weight: 600;
-    }
-
-    .summary {
-      color: #64748b;
-      font-size: 13px;
-      margin-bottom: 8px;
-    }
-
-    .pagination {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 12px;
-      flex-wrap: wrap;
-    }
-
-    .pagination button {
-      min-width: 80px;
-    }
-
-    .pagination select {
-      width: 90px;
-    }
-
-    @media (max-width: 1400px) {
-      .filter-grid {
-        grid-template-columns: repeat(3, 1fr);
-      }
-    }
-  </style>
 </head>
 
 <body>
-<main class="page-content">
+<script>
+  AppLayout.initLayout("Lịch sử");
+</script>
 
-  <div class="card">
-    <h2>Lịch sử dữ liệu theo chu kỳ</h2>
+<main class="page-content">
+  <div class="card history-filter-card">
+    <!-- <h2>Lịch sử dữ liệu theo chu kỳ</h2> -->
+    <div class="history-title">
+      <h2>BẢNG THỐNG KÊ DỮ LIỆU LỊCH SỬ</h2>
+    </div> 
 
     <div class="filter-grid">
       <div>
@@ -236,6 +70,7 @@
           <button type="button" class="multi-select-btn" onclick="toggleDropdown('tagDropdown')">
             Tất cả Tag
           </button>
+
           <div id="tagCheckList" class="multi-select-list">
             <label><input type="checkbox" class="tag-check" value="flow"> flow</label>
             <label><input type="checkbox" class="tag-check" value="level"> level</label>
@@ -254,6 +89,7 @@
           <button type="button" class="multi-select-btn" onclick="toggleDropdown('sourceDropdown')">
             Tất cả Nguồn
           </button>
+
           <div class="multi-select-list">
             <label><input type="checkbox" class="source-check" value="mqtt"> mqtt</label>
             <label><input type="checkbox" class="source-check" value="scada"> scada</label>
@@ -264,6 +100,26 @@
       </div>
     </div>
 
+    <!-- <div class="filter-actions">
+      <button onclick="setLastHour()">1 giờ gần nhất</button>
+      <button onclick="setTodayRange()">Hôm nay</button>
+      <button onclick="setCurrentMonthRange()">Tháng này</button>
+      <button class="gray" onclick="clearFilters()">Xoá lọc</button>
+      <button onclick="loadHistoryTable()">Tải bảng</button>
+
+      <label>Số hàng</label>
+      <select id="pageSize" onchange="changePageSize()">
+        <option value="auto" selected>Tự động</option>
+        <option value="10">10</option>
+        <option value="15">15</option>
+        <option value="20">20</option>
+        <option value="30">30</option>
+        <option value="50">50</option>
+      </select>
+
+      <label>Raw limit</label>
+      <input id="limit" type="number" value="50000">
+    </div> -->
     <div class="filter-actions">
       <button onclick="setLastHour()">1 giờ gần nhất</button>
       <button onclick="setTodayRange()">Hôm nay</button>
@@ -271,13 +127,27 @@
       <button class="gray" onclick="clearFilters()">Xoá lọc</button>
       <button onclick="loadHistoryTable()">Tải bảng</button>
 
+      <div class="action-spacer"></div>
+
+      <label>Số hàng</label>
+      <select id="pageSize" onchange="changePageSize()">
+        <option value="auto" selected>Tự động</option>
+        <option value="10">10</option>
+        <option value="15">15</option>
+        <option value="20">20</option>
+        <option value="30">30</option>
+        <option value="50">50</option>
+      </select>
+
       <label>Raw limit</label>
-      <input id="limit" type="number" value="50000" style="width:120px">
+      <input id="limit" type="number" value="50000">
+
     </div>
   </div>
 
-  <div class="card">
+  <div class="card history-table-card">
     <h3>Bảng dữ liệu</h3>
+
     <div id="summary" class="summary">Chưa tải dữ liệu</div>
 
     <div class="history-table-wrap">
@@ -287,6 +157,7 @@
             <th>Thời gian</th>
           </tr>
         </thead>
+
         <tbody id="pivotBody">
           <tr>
             <td>Chưa có dữ liệu</td>
@@ -303,27 +174,16 @@
 
       <button onclick="nextPage()">Sau</button>
       <button onclick="lastPage()">Cuối</button>
-
-      <label>Số hàng/trang</label>
-      <select id="pageSize" onchange="changePageSize()">
-        <option value="10">10</option>
-        <option value="15" selected>15</option>
-        <option value="20">20</option>
-        <option value="30">30</option>
-        <option value="50">50</option>
-      </select>
     </div>
   </div>
-
 </main>
 
 <script>
-AppLayout.initLayout("Lịch sử");
-
 let loggerList = [];
 let pivotColumns = [];
 let pivotRows = [];
 let currentPage = 1;
+let autoPageSize = 15;
 
 function initDatePickers() {
   flatpickr("#from", {
@@ -343,6 +203,29 @@ function initDatePickers() {
   });
 }
 
+function calculateAutoPageSize() {
+  const wrap = document.querySelector(".history-table-wrap");
+
+  if (!wrap) return 15;
+
+  const availableHeight = wrap.clientHeight;
+  const headerHeight = 58;
+  const rowHeight = 30;
+
+  const rows = Math.floor((availableHeight - headerHeight) / rowHeight);
+
+  return Math.max(rows, 5);
+}
+
+function getPageSize() {
+  if (pageSize.value === "auto") {
+    autoPageSize = calculateAutoPageSize();
+    return autoPageSize;
+  }
+
+  return Number(pageSize.value || 15);
+}
+
 function toggleDropdown(id) {
   document.querySelectorAll(".multi-select").forEach(el => {
     if (el.id !== id) el.classList.remove("active");
@@ -360,7 +243,7 @@ document.addEventListener("click", e => {
 });
 
 async function api(url) {
-  const res = await fetch(url);
+  const res = await fetch(url, { cache: "no-store" });
   return res.json();
 }
 
@@ -408,18 +291,15 @@ document.addEventListener("change", e => {
 });
 
 function getCheckedLoggers() {
-  return Array.from(document.querySelectorAll(".logger-check:checked"))
-    .map(cb => cb.value);
+  return Array.from(document.querySelectorAll(".logger-check:checked")).map(cb => cb.value);
 }
 
 function getCheckedTags() {
-  return Array.from(document.querySelectorAll(".tag-check:checked"))
-    .map(cb => cb.value);
+  return Array.from(document.querySelectorAll(".tag-check:checked")).map(cb => cb.value);
 }
 
 function getCheckedSources() {
-  return Array.from(document.querySelectorAll(".source-check:checked"))
-    .map(cb => cb.value);
+  return Array.from(document.querySelectorAll(".source-check:checked")).map(cb => cb.value);
 }
 
 async function loadHistoryTable() {
@@ -455,7 +335,10 @@ async function loadHistoryTable() {
     `Dòng hiển thị: ${json.total_rows || 0} | Dòng raw: ${json.total_raw_rows || 0} | Chu kỳ: ${json.filters?.interval || ""} | Mới nhất ở trên`;
 
   renderHeader(pivotColumns);
-  renderCurrentPage();
+
+  requestAnimationFrame(() => {
+    renderCurrentPage();
+  });
 }
 
 function renderHeader(columns) {
@@ -495,7 +378,7 @@ function renderHeader(columns) {
 }
 
 function renderCurrentPage() {
-  const size = Number(pageSize.value);
+  const size = getPageSize();
   const totalPages = Math.max(1, Math.ceil(pivotRows.length / size));
 
   if (currentPage > totalPages) currentPage = totalPages;
@@ -506,7 +389,10 @@ function renderCurrentPage() {
 
   renderRows(pivotColumns, rows);
 
-  pageInfo.textContent = `Trang ${currentPage}/${totalPages} - Tổng ${pivotRows.length} hàng`;
+  const sizeText = pageSize.value === "auto" ? `${size} tự động` : size;
+
+  pageInfo.textContent =
+    `Trang ${currentPage}/${totalPages} - Tổng ${pivotRows.length} hàng - ${sizeText} hàng/trang`;
 }
 
 function renderRows(columns, rows) {
@@ -560,7 +446,7 @@ function nextPage() {
 }
 
 function lastPage() {
-  const size = Number(pageSize.value);
+  const size = getPageSize();
   currentPage = Math.max(1, Math.ceil(pivotRows.length / size));
   renderCurrentPage();
 }
@@ -602,12 +488,15 @@ function clearFilters() {
   to.value = "";
   interval.value = "5m";
   limit.value = "50000";
+  pageSize.value = "auto";
 
   document.querySelectorAll(".logger-check").forEach(cb => cb.checked = false);
   document.querySelectorAll(".tag-check").forEach(cb => cb.checked = false);
   document.querySelectorAll(".source-check").forEach(cb => cb.checked = false);
 
   updateDropdownLabels();
+  currentPage = 1;
+  renderCurrentPage();
 }
 
 function formatNumber(value) {
@@ -639,13 +528,34 @@ function formatDateTime(date) {
 }
 
 function escapeHtml(value) {
-  return String(value)
+  return String(value ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 }
+
+window.addEventListener("resize", () => {
+  if (pageSize.value === "auto") {
+    currentPage = 1;
+    renderCurrentPage();
+  }
+});
+
+const layoutObserver = new MutationObserver(() => {
+  if (pageSize.value === "auto") {
+    setTimeout(() => {
+      currentPage = 1;
+      renderCurrentPage();
+    }, 300);
+  }
+});
+
+layoutObserver.observe(document.body, {
+  attributes: true,
+  attributeFilter: ["class"]
+});
 
 initDatePickers();
 setTodayRange();
