@@ -1,0 +1,169 @@
+### CẤU HÌNH BIẾN MÔI TRƯỜNG CHẠY TEST
+@baseUrl = http://localhost:3000
+
+
+# ===================================================================
+# NHÓM 1: KHAI THÁC DỮ LIỆU (MONITORING / MAP / CHART)
+# ===================================================================
+
+### 1.1 Kiểm tra trạng thái hoạt động của Server (Trang chủ)
+# PowerShell Test:
+# Invoke-RestMethod -Uri "http://localhost:3000/" -Method Get
+GET {{baseUrl}}/
+Accept: application/json
+
+###
+
+### 1.2 [DÙNG CHO MAP] Lấy dữ liệu mới nhất của TẤT CẢ các trạm (Có data_ts & saved_ts)
+# PowerShell Test:
+# Invoke-RestMethod -Uri "http://localhost:3000/api/logger/latest" -Method Get | ConvertTo-Json -Depth 5
+GET {{baseUrl}}/api/logger/latest
+Accept: application/json
+
+###
+
+### 1.3 [DÙNG CHO MAP] Lấy dữ liệu mới nhất của MỘT trạm bằng ID đầy đủ
+# PowerShell Test:
+# Invoke-RestMethod -Uri "http://localhost:3000/api/logger/latest?logger_id=mqtt_qt2" -Method Get | ConvertTo-Json -Depth 5
+GET {{baseUrl}}/api/logger/latest?logger_id=mqtt_qt2
+Accept: application/json
+
+###
+
+### 1.4 [DÙNG CHO CHART] Xem lịch sử Mực nước kèm bộ lọc nâng cao
+# PowerShell Test:
+# Invoke-RestMethod -Uri "http://localhost:3000/api/logger/history?logger_id=mqtt_qt2&tag_key=level&limit=5" -Method Get | ConvertTo-Json -Depth 5
+GET {{baseUrl}}/api/logger/history?logger_id=mqtt_qt2&tag_key=level&limit=5
+Accept: application/json
+
+
+# ===================================================================
+# NHÓM 2: QUẢN TRỊ CẤU HÌNH TRẠM & MAPPING TAGS
+# ===================================================================
+
+### 2.1 Xem danh sách cấu hình trạm hiện tại kèm các Tag đang mapping
+# PowerShell Test:
+# Invoke-RestMethod -Uri "http://localhost:3000/api/config/stations" -Method Get | ConvertTo-Json -Depth 5
+GET {{baseUrl}}/api/config/stations
+Accept: application/json
+
+###
+
+### 2.2 Đồng bộ / Cập nhật tọa độ (Upsert) cho một Trạm cụ thể
+# PowerShell Test:
+# Invoke-RestMethod -Uri "http://localhost:3000/api/config/stations/qt2" -Method Put -ContentType "application/json; charset=utf-8" -Body '{"display_name": "Trạm QT2", "lat": 9.1653, "lng": 105.1570, "description": "Cập nhật tọa độ"}'
+PUT {{baseUrl}}/api/config/stations/qt2
+Content-Type: application/json
+
+{
+  "display_name": "Trạm QT2",
+  "lat": 9.1653,
+  "lng": 105.1570,
+  "description": "Cập nhật qua REST Client"
+}
+
+###
+
+### 2.3 Gán thêm liên kết Tag cảm biến thô vào Trạm hiển thị
+# PowerShell Test:
+# Invoke-RestMethod -Uri "http://localhost:3000/api/config/tags" -Method Post -ContentType "application/json; charset=utf-8" -Body '{"source": "mqtt", "hardware_tag": "qt2", "parameter_key": "level", "target_station_id": "qt2"}'
+POST {{baseUrl}}/api/config/tags
+Content-Type: application/json
+
+{
+  "source": "mqtt",
+  "hardware_tag": "qt2",
+  "parameter_key": "level",
+  "target_station_id": "qt2"
+}
+
+
+# ===================================================================
+# NHÓM 3: QUẢN LÝ NGƯỜI DÙNG (USER CRUD)
+# ===================================================================
+
+### 3.1 Lấy danh sách thành viên trong hệ thống
+# PowerShell Test:
+# Invoke-RestMethod -Uri "http://localhost:3000/api/users" -Method Get | ConvertTo-Json
+GET {{baseUrl}}/api/users
+Accept: application/json
+
+###
+
+### 3.2 Tạo mới hoặc cập nhật thông tin tài khoản người dùng (Upsert)
+# PowerShell Test:
+# Invoke-RestMethod -Uri "http://localhost:3000/api/users" -Method Post -ContentType "application/json; charset=utf-8" -Body '{"username": "chauctw", "password": "123", "full_name": "Trần Văn Châu", "role": "admin"}'
+POST {{baseUrl}}/api/users
+Content-Type: application/json
+
+{
+  "username": "chauctw",
+  "password": "123",
+  "full_name": "Trần Văn Châu",
+  "role": "admin"
+}
+
+###
+
+### 3.3 Xóa tài khoản thành viên theo ID
+# PowerShell Test (Thay số 1 bằng ID thực tế của User lấy từ mục 3.1):
+# Invoke-RestMethod -Uri "http://localhost:3000/api/users/1" -Method Delete
+DELETE {{baseUrl}}/api/users/1
+Accept: application/json
+
+
+# ===================================================================
+# NHÓM 4: HỆ THỐNG CẢNH BÁO (ALERTS / TELEGRAM)
+# ===================================================================
+
+### 4.1 Cấu hình / Cập nhật cổng kết nối Telegram Bot nhận báo động
+# PowerShell Test:
+# Invoke-RestMethod -Uri "http://localhost:3000/api/alerts/telegram/config" -Method Put -ContentType "application/json; charset=utf-8" -Body '{"bot_token": "8705883687:AAEx3A1Y3VshJG1R4Si9syxQsOFX9RSQVu0", "chat_id": "8023101268", "enabled": true}'
+PUT {{baseUrl}}/api/alerts/telegram/config
+Content-Type: application/json
+
+{
+  "bot_token": "8705883687:AAEx3A1Y3VshJG1R4Si9syxQsOFX9RSQVu0",
+  "chat_id": "8023101268",
+  "enabled": true
+}
+
+###
+
+### 4.2 Xem thông số cấu hình kết nối Telegram Bot hiện tại
+# PowerShell Test:
+# Invoke-RestMethod -Uri "http://localhost:3000/api/alerts/telegram/config" -Method Get | ConvertTo-Json
+GET {{baseUrl}}/api/alerts/telegram/config
+Accept: application/json
+
+###
+
+### 4.3 Đồng bộ luật / Cài đặt ngưỡng cảnh báo Min/Max cho thông số
+# PowerShell Test:
+# Invoke-RestMethod -Uri "http://localhost:3000/api/alerts/thresholds" -Method Post -ContentType "application/json; charset=utf-8" -Body '{"station_id": "qt2", "tag_key": "level", "min_value": 10.0, "max_value": 25.0, "enabled": 1}'
+POST {{baseUrl}}/api/alerts/thresholds
+Content-Type: application/json
+
+{
+  "station_id": "qt2",
+  "tag_key": "level",
+  "min_value": 10.0,
+  "max_value": 25.0,
+  "enabled": 1
+}
+
+###
+
+### 4.4 Xem toàn bộ danh sách quy tắc cài đặt ngưỡng hiện có
+# PowerShell Test:
+# Invoke-RestMethod -Uri "http://localhost:3000/api/alerts/thresholds" -Method Get | ConvertTo-Json
+GET {{baseUrl}}/api/alerts/thresholds
+Accept: application/json
+
+###
+
+### 4.5 Xóa một quy tắc cài đặt ngưỡng cảnh báo theo ID
+# PowerShell Test (Thay số 1 bằng ID thực tế cần xóa lấy từ mục 4.4):
+# Invoke-RestMethod -Uri "http://localhost:3000/api/alerts/thresholds/1" -Method Delete
+DELETE {{baseUrl}}/api/alerts/thresholds/1
+Accept: application/json
