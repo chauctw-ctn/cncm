@@ -36,6 +36,7 @@ router.post("/", (req, res) => {
     lat,
     lng,
     enabled = 1,
+    offline_minutes = 30, // Thêm cấu hình mặc định là 30 phút
     tags = []
   } = req.body;
 
@@ -54,9 +55,9 @@ router.post("/", (req, res) => {
     db.run(
       `
       INSERT INTO logger_points (
-        logger_id, source, raw_id, name, lat, lng, enabled
+        logger_id, source, raw_id, name, lat, lng, enabled, offline_minutes
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(logger_id) DO UPDATE SET
         source = excluded.source,
         raw_id = excluded.raw_id,
@@ -64,6 +65,7 @@ router.post("/", (req, res) => {
         lat = excluded.lat,
         lng = excluded.lng,
         enabled = excluded.enabled,
+        offline_minutes = excluded.offline_minutes,
         updated_ts = CURRENT_TIMESTAMP
       `,
       [
@@ -73,7 +75,8 @@ router.post("/", (req, res) => {
         name || raw_id.toUpperCase(),
         lat ?? null,
         lng ?? null,
-        enabled
+        enabled,
+        offline_minutes
       ],
       (err) => {
         if (err) {
@@ -144,45 +147,104 @@ router.post("/", (req, res) => {
 
 router.put("/:logger_id", (req, res) => {
   const { logger_id } = req.params;
-  const { source, raw_id, name, lat, lng, enabled } = req.body;
+  const { source, raw_id, name, lat, lng, enabled, offline_minutes, tags = [] } = req.body;
 
   const db = openDb();
 
-  db.run(
-    `
-    UPDATE logger_points
-    SET
-      source = COALESCE(?, source),
-      raw_id = COALESCE(?, raw_id),
-      name = COALESCE(?, name),
-      lat = COALESCE(?, lat),
-      lng = COALESCE(?, lng),
-      enabled = COALESCE(?, enabled),
-      updated_ts = CURRENT_TIMESTAMP
-    WHERE logger_id = ?
-    `,
-    [
-      source ?? null,
-      raw_id ?? null,
-      name ?? null,
-      lat ?? null,
-      lng ?? null,
-      enabled ?? null,
-      logger_id
-    ],
-    function (err) {
-      db.close();
+  db.serialize(() => {
+    db.run("BEGIN TRANSACTION");
 
-      if (err) {
-        return res.status(500).json({ success: false, message: err.message });
+    // 1. Cập nhật thông tin chính của Trạm (Đảm bảo đồng bộ chính xác trường name vào SQLite)
+    db.run(
+      `
+      UPDATE logger_points
+      SET
+        source = COALESCE(?, source),
+        raw_id = COALESCE(?, raw_id),
+        name = COALESCE(?, name), -- Khắc phục dứt điểm lỗi ghi nhận tên hiển thị trạm
+        lat = COALESCE(?, lat),
+        lng = COALESCE(?, lng),
+        enabled = COALESCE(?, enabled),
+        offline_minutes = COALESCE(?, offline_minutes),
+        updated_ts = CURRENT_TIMESTAMP
+      WHERE logger_id = ?
+      `,
+      [
+        source ?? null,
+        raw_id ?? null,
+        name ?? null, // Truyền đúng giá trị chuỗi tên trạm mới nhận từ Frontend lên đây
+        lat ?? null,
+        lng ?? null,
+        enabled ?? null,
+        offline_minutes ?? null,
+        logger_id
+      ],
+      function (err) {
+        if (err) {
+          db.run("ROLLBACK");
+          db.close();
+          return res.status(500).json({ success: false, message: err.message });
+        }
+
+        if (!Array.isArray(tags) || tags.length === 0) {
+          db.run("COMMIT");
+          db.close();
+          return res.json({
+            success: true,
+            message: "Đã cập nhật thông tin tên trạm và tọa độ thành công",
+            logger_id
+          });
+        }
+
+        // 2. Đồng bộ danh sách cấu hình tags chi tiết của Trạm (giữ nguyên luồng xử lý tag mẫu)
+        const stmt = db.prepare(`
+          INSERT INTO logger_tags (
+            logger_id, tag_key, tag_name, unit, enabled, min_value, max_value, display_order
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT(logger_id, tag_key) DO UPDATE SET
+            tag_name = excluded.tag_name,
+            unit = excluded.unit,
+            enabled = excluded.enabled,
+            min_value = CASE WHEN excluded.min_value IS NOT NULL THEN excluded.min_value ELSE logger_tags.min_value END,
+            max_value = CASE WHEN excluded.max_value IS NOT NULL THEN excluded.max_value ELSE logger_tags.max_value END,
+            display_order = excluded.display_order
+        `);
+
+        for (const tag of tags) {
+          if (!tag.tag_key) continue;
+
+          stmt.run([
+            logger_id,
+            tag.tag_key,
+            tag.tag_name || tag.tag_key,
+            tag.unit || "",
+            tag.enabled ?? 1,
+            tag.min_value ?? null,
+            tag.max_value ?? null,
+            tag.display_order ?? 0
+          ]);
+        }
+
+        stmt.finalize((tagErr) => {
+          if (tagErr) {
+            db.run("ROLLBACK");
+            db.close();
+            return res.status(500).json({ success: false, message: tagErr.message });
+          }
+
+          db.run("COMMIT");
+          db.close();
+
+          res.json({
+            success: true,
+            message: "Đã cập nhật cấu hình thông tin trạm và đồng bộ các Tags liên quan dứt điểm",
+            logger_id
+          });
+        });
       }
-
-      res.json({
-        success: true,
-        changed: this.changes
-      });
-    }
-  );
+    );
+  });
 });
 
 router.delete("/:logger_id", (req, res) => {

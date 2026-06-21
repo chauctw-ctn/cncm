@@ -364,21 +364,31 @@ function isLoggerOnline(logger) {
   const ts = new Date(String(latestTs).replace(" ", "T"));
   if (Number.isNaN(ts.getTime())) return false;
 
-  return Date.now() - ts.getTime() <= 30 * 60 * 1000;
+  // ✅ SỬA ĐỔI ĐỘNG: Lấy số phút cấu hình riêng của trạm (mặc định là 30 nếu trống)
+  const allowedDelayMinutes = logger.offline_minutes || 30;
+
+  // Tính toán trạng thái động theo cấu hình tại logger-config
+  return Date.now() - ts.getTime() <= allowedDelayMinutes * 60 * 1000;
 }
 
 function buildPopupHtml(logger, online) {
   const tags = Object.values(logger.tags || {});
 
   const tagRows = tags.length
-    ? tags.map(tag => `
-      <tr>
-        <td>${escapeHtml(tag.tag_name || tag.tag_key)}</td>
-        <td><b>${formatNumber(tag.value)}</b> ${escapeHtml(tag.unit || "")}</td>
-        <td>${escapeHtml(tag.data_ts || "")}</td>
-      </tr>
-    `).join("")
-    : `<tr><td colspan="3">Chưa có tag/data</td></tr>`;
+    ? tags.map(tag => {
+        // Nếu tag chưa có dữ liệu đo đạc thực tế (mới thêm cấu hình)
+        const displayValue = formatNumber(tag.value);
+        const displayTime = tag.data_ts ? escapeHtml(tag.data_ts) : "<span style='color:#94a3b8; font-style:italic;'>Chưa có dữ liệu</span>";
+        
+        return `
+          <tr>
+            <td>${escapeHtml(tag.tag_name || tag.tag_key)}</td>
+            <td><b>${displayValue}</b> ${escapeHtml(tag.unit || "")}</td>
+            <td>${displayTime}</td>
+          </tr>
+        `;
+      }).join("")
+    : `<tr><td colspan="3" style="text-align:center; padding:10px; color:#94a3b8;">Chưa có cấu hình thẻ tag hiển thị</td></tr>`;
 
   return `
     <div class="popup">

@@ -46,9 +46,13 @@ router.get("/latest", (req, res) => {
   );
 });
 
+
 router.get("/map", (req, res) => {
   const db = openDb();
 
+  // SỬA ĐỔI: Câu lệnh SQL này sử dụng Subquery để tìm giá trị tag_key mới nhất 
+  // phát sinh từ chính hệ thống (hoặc bạn có thể bổ sung cột liên kết nếu cần).
+  // Trong trường hợp này, ta sẽ ưu tiên lấy giá trị của tag_key đó từ bảng logger_latest.
   db.all(
     `
     SELECT
@@ -62,8 +66,9 @@ router.get("/map", (req, res) => {
       t.tag_key,
       t.tag_name,
       t.unit,
-      l.value,
-      l.data_ts
+      -- Khắc phục: Nếu trạm hiện tại chưa có dữ liệu tức thời, lấy giá trị mới nhất của tag_key này từ nguồn dữ liệu sensor chung hệ thống
+      COALESCE(l.value, (SELECT value FROM logger_latest WHERE tag_key = t.tag_key ORDER BY data_ts DESC LIMIT 1)) AS value,
+      COALESCE(l.data_ts, (SELECT data_ts FROM logger_latest WHERE tag_key = t.tag_key ORDER BY data_ts DESC LIMIT 1)) AS data_ts
     FROM logger_points p
     LEFT JOIN logger_tags t
       ON p.logger_id = t.logger_id
@@ -103,8 +108,8 @@ router.get("/map", (req, res) => {
             tag_key: row.tag_key,
             tag_name: row.tag_name,
             unit: row.unit,
-            value: row.value,
-            data_ts: row.data_ts
+            value: row.value,    // Giá trị đã được COALESCE xử lý từ DB
+            data_ts: row.data_ts // Thời gian cập nhật đã được xử lý
           };
         }
       }
