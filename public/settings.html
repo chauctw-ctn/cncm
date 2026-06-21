@@ -105,17 +105,6 @@
           <button class="gray" onclick="testTelegram()">Gửi tin kiểm thử</button>
           <button class="gray" onclick="loadTelegramSettings()">Tải lại dữ liệu</button>
         </div>
-
-        <div class="help-box">
-          <h4>Hướng dẫn lấy Telegram Bot Token / Chat ID nhanh:</h4>
-          <ol>
-            <li>Tìm kiếm từ khóa <b>@BotFather</b> trên thanh Telegram.</li>
-            <li>Gửi lệnh <b>/newbot</b> và đặt tên theo hướng dẫn để khởi tạo Bot.</li>
-            <li>Sao chép chuỗi mã <b>Bot Token</b> dán vào ô cấu hình phía trên.</li>
-            <li>Tạo nhóm, thêm Bot vào và truy cập link sau để tìm <code>chat.id</code>:</li>
-          </ol>
-          <pre>https://api.telegram.org/botBOT_TOKEN/getUpdates</pre>
-        </div>
       </div>
 
       <div class="scada-card">
@@ -353,7 +342,7 @@ async function loadThresholdAllTags() {
   if (!isAdmin) return;
 
   const [mapJson, thresholdJson] = await Promise.all([
-    api("/api/readings/map" ? "/api/readings/map" : "/api/logger/readings/map"),
+    api("/api/logger/readings/map"), 
     api("/api/logger/thresholds")
   ]);
 

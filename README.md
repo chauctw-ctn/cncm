@@ -12,7 +12,10 @@ http://localhost:3000/logger-config.html
 http://localhost:3000/kpi-config.html
 
 
-
+35/gp-btnmt: CLNQT4, G1, G2, G4, G12, G15, G18, G20, G22, G23, G24, G25, G27, QT3, QT4, QT5
+36/gp-btnmt: CLNGS4NM2, GS1NM2, GS2NM2, GS3NM2, GS4NM2, QT1NM2, QT2NM2
+391/gp-bnnmt: G21, G26, QT2M
+393/gp-bnnmt: CLNGS5NM1, GS1NM1, GS2NM1, GS3NM1, GS4NM1, GS5NM1, QT1NM1, QT2NM1
 
 
 

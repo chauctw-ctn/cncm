@@ -1,21 +1,25 @@
 :root {
-  --water-bg:    #eef2f7;
+  --water-bg:     #eef2f7;
   --water-text:  #0f172a;
   --water-muted: #475569;
   --water-border: #e2e8f0;
   --primary-blue: #2196f3;
+  --header-height: 56px; /* Thay đổi thông số này trùng với chiều cao header thực tế của bạn */
+  --sidebar-width: 260px; /* Thay đổi thông số này trùng với chiều cao sidebar thực tế của bạn */
 }
 
-/* ── Định cấu hình Viewport cố định không tràn màn hình ── */
+/* ── 1. KHÓA TUYỆT ĐỐI THANH CUỘN TOÀN TRANG ── */
 html, body {
   margin: 0;
   padding: 0;
   height: 100vh;
   width: 100vw;
-  overflow: hidden;
+  overflow: hidden; /* Triệt tiêu thanh cuộn dọc ngoài cùng của trình duyệt */
+  background: var(--water-bg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* ── Override khối .page-content ── */
+/* ── 2. VÙNG CHỨA NỘI DUNG CHÍNH KHÍT VIEWPORT ── */
 .page-content {
   display: flex;
   flex-direction: column;
@@ -25,10 +29,9 @@ html, body {
   height: 100vh;
   width: calc(100vw - var(--sidebar-width));
   box-sizing: border-box;
-  background: var(--water-bg);
   color: var(--water-text);
   transition: all 0.25s ease;
-  overflow: hidden;
+  overflow: hidden; /* Khóa chết không gian, nội dung thừa bắt buộc phải xử lý cục bộ */
   gap: 12px;
 }
 
@@ -37,7 +40,7 @@ body.sidebar-hidden .page-content {
   width: 100vw;
 }
 
-/* ── Tiêu đề trang Scada ── */
+/* ── 3. TIÊU ĐỀ TRANG (CỐ ĐỊNH PHÍA TRÊN) ── */
 .water-title-card {
   flex: 0 0 auto;
   background: #ffffff;
@@ -62,25 +65,40 @@ body.sidebar-hidden .page-content {
   gap: 8px;
 }
 
-/* ── Khung bố cục chính chia làm 2 phân khu lớn cuộn nội bộ ── */
+/* ── 4. KHUNG BỐ CỤC CHIA 2 CỘT CHÍNH ── */
 .settings-main-layout {
   flex: 1;
-  min-height: 0;
+  min-height: 0; /* Ngăn chặn lưới Grid phình to vượt quá cấu trúc Flex cha */
   display: grid;
-  grid-template-columns: 1fr 1.3fr; /* Cột 1: Cấu hình chung, Cột 2: Bảng ngưỡng cảnh báo */
+  grid-template-columns: 1fr 1.3fr;
   gap: 14px;
+  height: calc(100% - 60px); /* Vừa vặn hoàn hảo khoảng trống còn lại */
 }
 
+/* ── 5. CỘT TRÁI (QUẢN LÝ CÁC CARD CẤU HÌNH) ── */
 .settings-column {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  overflow-y: auto;
-  padding-right: 2px;
+  overflow-y: auto; /* Tự động cuộn dọc toàn bộ cột trái nếu màn hình có chiều cao quá thấp */
   min-height: 0;
+  padding-right: 4px;
 }
 
-/* Thẻ Card UI Scada đồng bộ */
+/* Ép Card Log cuối cùng luôn co giãn chiếm trọn đáy cột trái */
+.settings-column .scada-card:last-child {
+  flex: 1;
+  min-height: 140px; 
+  display: flex;
+  flex-direction: column;
+}
+
+/* Cột phải cố định chiếm trọn chiều cao */
+#thresholdCard {
+  height: 100%; 
+}
+
+/* ── 6. THIẾT LẬP THỂ CARD UI SCADA ĐỒNG BỘ ── */
 .scada-card {
   background: #ffffff;
   border: 1px solid var(--water-border);
@@ -90,6 +108,7 @@ body.sidebar-hidden .page-content {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
+  min-height: 0; /* Đảm bảo các thành phần bảng bên trong có điểm tựa để tính toán scroll */
   flex-shrink: 0;
 }
 
@@ -100,18 +119,21 @@ body.sidebar-hidden .page-content {
   color: var(--water-text);
   border-bottom: 2px solid var(--water-bg);
   padding-bottom: 6px;
+  flex-shrink: 0;
 }
 
 .setting-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .full-width {
   grid-column: span 2;
 }
 
+/* ── 7. FORM INPUTS & LABELS ── */
 label {
   font-weight: 600;
   font-size: 12px;
@@ -137,20 +159,21 @@ input:focus, select:focus {
   background-color: #ffffff;
 }
 
-/* ── Bảng hiển thị (Table UI) ── */
+/* ── 8. KHU VỰC BẢNG HIỂN THỊ DỮ LIỆU (CHỈ CUỘN NỘI BỘ TẠI ĐÂY) ── */
 .table-wrap {
-  max-height: 240px;
-  overflow-y: auto;
+  max-height: 180px; /* Khống chế chiều cao danh sách User */
+  overflow-y: auto;   /* Chỉ kích hoạt thanh cuộn dọc tại đây */
   border: 1px solid var(--water-border);
   border-radius: 6px;
   margin-top: 10px;
 }
 
 .threshold-table-wrap {
-  flex: 1;
-  overflow-y: auto;
+  flex: 1;            /* Tự động kéo giãn lấp đầy không gian còn thừa của Card */
+  overflow-y: auto;   /* Kích hoạt thanh cuộn dọc cho bảng thông số Tags */
   border: 1px solid var(--water-border);
   border-radius: 6px;
+  min-height: 0;      /* Bắt buộc phải có để flex con không bị phình to */
 }
 
 table {
@@ -169,12 +192,28 @@ table th {
   background: #f8fafc;
   font-weight: 700;
   color: var(--water-muted);
-  position: sticky;
+  position: sticky;   /* Ghim chặt tiêu đề cột khi cuộn nội bộ dữ liệu xuống dưới */
   top: 0;
   z-index: 10;
 }
 
-/* ── Tiện ích phụ trợ ── */
+/* ── 9. KHÓA CỨNG VÀ FIX LỖI NHẬT KÝ PHẢN HỒI API (RESPONSE LOG) ── */
+pre {
+  background: #0f172a;
+  color: #38bdf8;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  margin: 6px 0 0 0;
+  
+  flex: 1;            /* Tự động lấp đầy phần card chứa log */
+  min-height: 0;      /* Cực kỳ quan trọng: Ép text dài buộc phải sinh thanh cuộn thay vì phình card */
+  overflow: auto;     /* Tự động sinh thanh cuộn dọc và cuộn ngang nội bộ */
+  white-space: pre;   /* Bảo toàn định dạng xuống dòng của JSON */
+  word-break: break-all; /* Ngắt từ thông minh tránh làm vỡ layout */
+}
+
+/* ── 10. TIỆN ÍCH PHỤ TRỢ ── */
 .help-box {
   background: #f8fafc;
   border: 1px dashed var(--water-border);
@@ -182,26 +221,16 @@ table th {
   padding: 10px;
   margin-top: 10px;
   font-size: 11px;
+  flex-shrink: 0;
 }
 .help-box h4 { margin: 0 0 6px 0; font-size: 12px; color: var(--water-text); }
 .help-box ol { margin: 0; padding-left: 16px; color: var(--water-muted); }
 
-pre {
-  background: #0f172a;
-  color: #38bdf8;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 11px;
-  max-height: 120px;
-  overflow: auto;
-  margin: 6px 0;
-}
-
 .status-ok { color: #10b981; font-weight: 700; font-size: 13px; margin: 6px 0 0 0; }
 .status-error { color: #ef4444; font-weight: 700; font-size: 13px; margin: 6px 0 0 0; }
-.muted { color: var(--water-muted); font-size: 12px; margin: 0 0 10px 0; }
+.muted { color: var(--water-muted); font-size: 12px; margin: 0 0 10px 0; flex-shrink: 0; }
 
-/* ── Hệ thống Nút bấm đồng bộ ── */
+/* ── 11. HỆ THỐNG NÚT BẤM ĐỒNG BỘ ── */
 button {
   padding: 6px 12px;
   font-size: 12px;
@@ -222,13 +251,26 @@ button.danger { background: #ef4444; }
   margin-top: 12px;
   display: flex;
   gap: 6px;
+  flex-shrink: 0;
 }
 
-/* Thanh cuộn mảnh */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+/* ── 12. ĐỊNH DẠNG THANH CUỘN NỘI BỘ SIÊU MẢNH THẨM MỸ CAO ── */
+::-webkit-scrollbar { 
+  width: 5px; 
+  height: 5px; 
+}
+::-webkit-scrollbar-thumb { 
+  background: #cbd5e1; 
+  border-radius: 3px; 
+}
+::-webkit-scrollbar-track { 
+  background: transparent; 
+}
 
+/* ── 13. RESPONSIVE CHO MÀN HÌNH NHỎ HƠN ── */
 @media (max-width: 1200px) {
-  .settings-main-layout { grid-template-columns: 1fr; }
-  .page-content { overflow-y: auto; }
+  .settings-main-layout { 
+    grid-template-columns: 1fr; 
+    overflow-y: auto; /* Chuyển sang cuộn layout chính nếu chiều rộng không đủ chia 2 cột */
+  }
 }
